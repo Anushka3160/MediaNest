@@ -1,0 +1,10 @@
+{
+  "name": "medianest",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "cd backend && npm ci && npx prisma generate && npm run build && cd ../frontend && npm ci && npm run build",
+    "vercel-build": "npm run build",
+    "start": "cd backend && npm start"
+  },
+  "dependencies": {}
+}
