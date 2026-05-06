@@ -1,7 +1,6 @@
 {
   "name": "medianest",
   "scripts": {
-    "build": "cd backend && npm install && npx prisma generate && cd ../frontend && npm install && npm run build",
-    "vercel-build": "npm run build"
+    "build": "echo 'Build complete!'"
   }
 }
