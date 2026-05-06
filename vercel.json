@@ -16,16 +16,8 @@
       "dest": "backend/src/index.js"
     },
     {
-      "src": "/js/(.*)",
-      "dest": "public/js/$1"
-    },
-    {
-      "src": "/(.*\\.html)",
+      "src": "/(.*)",
       "dest": "public/$1"
-    },
-    {
-      "src": "/",
-      "dest": "public/index.html"
     }
   ]
 }
