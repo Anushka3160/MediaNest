@@ -1,6 +1,6 @@
 {
   "name": "medianest",
   "scripts": {
-    "build": "cd backend && npm install && npx prisma generate"
+    "build": "cd backend && npm install && npx prisma generate && npm run build"
   }
 }
