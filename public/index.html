@@ -819,6 +819,12 @@
       opacity: 1;
       transform: translateY(0);
     }
+    .footer-name {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-left: 100px;
+    }
 
     /* ===================== RESPONSIVE ===================== */
     @media (max-width: 1024px) {
@@ -846,6 +852,12 @@
       .footer .container { flex-direction: column; gap: 20px; text-align: center; }
       .footer-links { flex-wrap: wrap; justify-content: center; }
       .cta-section .section-title { font-size: 2rem; }
+      .footer-name {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      text-align: center;
+      margin-left: 10px;
+    }
     }
 
     @media (max-width: 480px) {
@@ -1131,7 +1143,8 @@
     <!-- FOOTER -->
     <footer class="footer">
       <div class="container">
-        <div class="footer-left">Media<span>Nest</span><span></span><span></span><span>Made with ❤️ ~Anushka</span></div>
+        <div class="footer-left">Media<span>Nest</span></div>
+        <h6 class="footer-name">Made with ❤️ ~Anushka</h6>
         <ul class="footer-links">
           <li><a href="#">About</a></li>
           <li><a href="#">Contact</a></li>
