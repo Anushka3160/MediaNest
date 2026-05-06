@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediaNest — Your Personal Media Space</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ===================== RESET ===================== */
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ===================== ROOT / THEME ===================== */
+    :root {
+      --bg-primary: #1a2e1a;
+      --bg-secondary: #1e3320;
+      --bg-card: #243726;
+      --bg-card-hover: #2d4530;
+      --bg-warm: #2a3c25;
+      --text-primary: #e8e4d9;
+      --text-secondary: #b8b4a4;
+      --text-muted: #8a8672;
+      --accent-green: #7cb87c;
+      --accent-sage: #a3b890;
+      --accent-gold: #d4a76a;
+      --accent-warm: #e0c097;
+      --accent-cream: #f5edd6;
+      --accent-rose: #c49090;
+      --accent-lavender: #9b8ec4;
+      --accent-blue: #6ea4c4;
+      --border-subtle: rgba(255, 255, 255, 0.06);
+      --border-leaf: rgba(124, 184, 124, 0.15);
+      --glow-green: rgba(124, 184, 124, 0.08);
+      --glow-warm: rgba(212, 167, 106, 0.1);
+      --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.25);
+      --shadow-hover: 0 8px 40px rgba(0, 0, 0, 0.35);
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 20px;
+      --radius-xl: 28px;
+      --font-heading: "Playfair Display", Georgia, serif;
+      --font-body: "Inter", -apple-system, sans-serif;
+      --transition-fast: 0.2s ease;
+      --transition-smooth: 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ===================== BACKGROUND SCENE ===================== */
+    .bg-scene {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    /* leaves */
+    .leaf {
+      position: absolute;
+      font-size: 1.2rem;
+      opacity: 0;
+      animation: fallLeaf 12s infinite linear;
+    }
+    .leaf:nth-child(1) { left: 5%; animation-delay: 0s; animation-duration: 14s; }
+    .leaf:nth-child(2) { left: 15%; animation-delay: 2s; animation-duration: 11s; }
+    .leaf:nth-child(3) { left: 30%; animation-delay: 4s; animation-duration: 13s; }
+    .leaf:nth-child(4) { left: 50%; animation-delay: 1s; animation-duration: 10s; }
+    .leaf:nth-child(5) { left: 65%; animation-delay: 3s; animation-duration: 15s; }
+    .leaf:nth-child(6) { left: 80%; animation-delay: 5s; animation-duration: 12s; }
+    .leaf:nth-child(7) { left: 92%; animation-delay: 0.5s; animation-duration: 11.5s; }
+    .leaf:nth-child(8) { left: 42%; animation-delay: 6s; animation-duration: 13.5s; }
+
+    @keyframes fallLeaf {
+      0%   { opacity: 0; transform: translateY(-40px) rotate(0deg); }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.4; }
+      100% { opacity: 0; transform: translateY(100vh) rotate(360deg); }
+    }
+
+    /* fireflies */
+    .firefly {
+      position: absolute;
+      width: 4px; height: 4px;
+      background: var(--accent-gold);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-gold), 0 0 16px var(--accent-gold);
+      opacity: 0;
+      animation: fireflyGlow 5s infinite ease-in-out;
+    }
+    .firefly:nth-child(9)  { left: 10%; top: 30%; animation-delay: 0s; }
+    .firefly:nth-child(10) { left: 25%; top: 60%; animation-delay: 1.5s; }
+    .firefly:nth-child(11) { left: 55%; top: 20%; animation-delay: 3s; }
+    .firefly:nth-child(12) { left: 75%; top: 50%; animation-delay: 0.8s; }
+    .firefly:nth-child(13) { left: 40%; top: 80%; animation-delay: 2.5s; }
+    .firefly:nth-child(14) { left: 88%; top: 35%; animation-delay: 4s; }
+
+    @keyframes fireflyGlow {
+      0%, 100% { opacity: 0; transform: translate(0, 0); }
+      30%      { opacity: 0.8; transform: translate(10px, -15px); }
+      60%      { opacity: 0.4; transform: translate(-8px, -25px); }
+      80%      { opacity: 0.7; transform: translate(5px, -10px); }
+    }
+
+    /* ambient glow */
+    .ambient-glow {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .glow-1 {
+      width: 500px; height: 500px;
+      background: var(--glow-green);
+      top: -100px; right: -100px;
+      animation: glowPulse 6s infinite ease-in-out;
+    }
+    .glow-2 {
+      width: 400px; height: 400px;
+      background: var(--glow-warm);
+      bottom: -50px; left: -100px;
+      animation: glowPulse 8s infinite ease-in-out 2s;
+    }
+    @keyframes glowPulse {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50%      { opacity: 0.5; transform: scale(1.1); }
+    }
+
+    /* characters */
+    .character {
+      position: fixed;
+      font-size: 2rem;
+      opacity: 0.5;
+      pointer-events: none;
+      z-index: 0;
+      animation: characterFloat 6s infinite ease-in-out;
+    }
+    .char-cat    { bottom: 40px; left: 40px; animation-delay: 0s; }
+    .char-plant  { bottom: 40px; right: 40px; animation-delay: 1s; font-size: 2.5rem; }
+    .char-book   { top: 50%; left: 30px; animation-delay: 2s; }
+    .char-lamp   { top: 30%; right: 50px; animation-delay: 0.5s; font-size: 2.5rem; }
+
+    @keyframes characterFloat {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-8px); }
+    }
+
+    /* ===================== LAYOUT ===================== */
+    .page-content { position: relative; z-index: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+    section { padding: 100px 0; }
+
+    /* ===================== NAVBAR ===================== */
+    .navbar {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      z-index: 100;
+      padding: 20px 0;
+      backdrop-filter: blur(20px);
+      background: rgba(26, 46, 26, 0.8);
+      border-bottom: 1px solid var(--border-leaf);
+    }
+    .navbar .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+    .logo span { color: var(--accent-green); }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* ===================== BUTTONS ===================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 24px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::after {
+      content: "";
+      position: absolute;
+      top: 50%; left: 50%;
+      width: 0; height: 0;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      transition: width 0.5s ease, height 0.5s ease;
+    }
+    .btn:active::after {
+      width: 300px; height: 300px;
+    }
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-secondary);
+    }
+    .btn-ghost:hover {
+      color: var(--text-primary);
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-2px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-green), #5a9e5a);
+      color: var(--bg-primary);
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(124, 184, 124, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-3px) scale(1.02);
+      box-shadow: 0 8px 25px rgba(124, 184, 124, 0.4);
+    }
+    .btn-primary:active {
+      transform: translateY(-1px) scale(0.98);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text-primary);
+      border: 1px solid var(--border-leaf);
+    }
+    .btn-outline:hover {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      background: rgba(124, 184, 124, 0.05);
+      transform: translateY(-3px);
+      box-shadow: 0 4px 15px rgba(124, 184, 124, 0.1);
+    }
+    .btn-lg {
+      padding: 14px 32px;
+      font-size: 1rem;
+      border-radius: var(--radius-lg);
+    }
+
+    /* ===================== HERO ===================== */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding-top: 80px;
+    }
+    .hero .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .hero-content { max-width: 560px; }
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--accent-green);
+      margin-bottom: 20px;
+      padding: 6px 14px;
+      background: rgba(124, 184, 124, 0.1);
+      border-radius: 100px;
+      border: 1px solid var(--border-leaf);
+    }
+    .hero-label-icon { font-style: normal; }
+    .hero-title {
+      font-family: var(--font-heading);
+      font-size: 3.2rem;
+      font-weight: 700;
+      line-height: 1.15;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+    .hero-title .highlight { color: var(--accent-green); }
+    .hero-description {
+      font-size: 1.1rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+      max-width: 480px;
+    }
+    .hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+
+    /* ===================== ROOM PREVIEW ===================== */
+    .room-scene {
+      background: var(--bg-card);
+      border: 1px solid var(--border-leaf);
+      border-radius: var(--radius-xl);
+      padding: 32px;
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+    .room-scene::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, rgba(124, 184, 124, 0.04), transparent);
+      pointer-events: none;
+    }
+    .room-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+    .room-header-icon {
+      width: 36px; height: 36px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      background: rgba(124, 184, 124, 0.1);
+    }
+    .room-header-text h3 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .room-header-text p { font-size: 0.75rem; color: var(--text-muted); }
+
+    .shelf {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .shelf-item {
+      aspect-ratio: 2/3;
+      border-radius: var(--radius-sm);
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .shelf-item:hover {
+      transform: translateY(-6px) rotate(-1deg);
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+    }
+    .shelf-item-1 { background: linear-gradient(135deg, #2d4a2d, #3d6b3d); }
+    .shelf-item-2 { background: linear-gradient(135deg, #1b3a4b, #2a5a6b); }
+    .shelf-item-3 { background: linear-gradient(135deg, #4a3a2a, #6b5a42); }
+    .shelf-item-4 { background: linear-gradient(135deg, #2c3e2c, #3d5a3d); }
+    .shelf-item-5 { background: linear-gradient(135deg, #3a2a1a, #5a4a32); }
+    .shelf-item-6 { background: linear-gradient(135deg, #2a3a2e, #425a46); }
+
+    .shelf-item-title {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 8px;
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.8);
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+    }
+
+    .mini-notebook {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+    }
+    .mini-notebook-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .mini-notebook-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent-green);
+    }
+    .mini-notebook-title { font-size: 0.75rem; font-weight: 600; }
+    .mini-notebook p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-style: italic;
+      line-height: 1.5;
+    }
+
+    /* ===================== SECTION STYLES ===================== */
+    .section-label {
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--accent-green);
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .section-title {
+      font-family: var(--font-heading);
+      font-size: 2.2rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .section-description {
+      text-align: center;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin: 0 auto 60px;
+      font-size: 1.05rem;
+      line-height: 1.7;
+    }
+
+    /* ===================== ROOMS ===================== */
+    .rooms-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .room-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      text-align: center;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .room-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      opacity: 0;
+      transition: var(--transition-fast);
+    }
+    .room-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--border-leaf);
+      box-shadow: var(--shadow-hover);
+    }
+    .room-card:hover::before { opacity: 1; }
+    .room-card-screen::before { background: var(--accent-green); }
+    .room-card-books::before  { background: var(--accent-gold); }
+    .room-card-music::before  { background: var(--accent-lavender); }
+    .room-card-icon {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin: 0 auto 20px;
+    }
+    .room-card-screen .room-card-icon { background: rgba(124, 184, 124, 0.1); }
+    .room-card-books .room-card-icon  { background: rgba(212, 167, 106, 0.1); }
+    .room-card-music .room-card-icon  { background: rgba(155, 142, 196, 0.1); }
+    .room-card h3 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .room-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .room-card-tags {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .room-tag {
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      border-radius: 100px;
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ===================== THEMES SECTION ===================== */
+    .vibe-preview-area {
+      margin-bottom: 40px;
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      text-align: center;
+      transition: all 0.8s ease;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+    .vibe-preview-area .preview-emoji {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      animation: characterFloat 3s infinite ease-in-out;
+    }
+    .vibe-preview-area .preview-title {
+      font-family: var(--font-heading);
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+    .vibe-preview-area .preview-desc {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+    }
+
+    /* vibe colors */
+    .vibe-cozy {
+      background: linear-gradient(135deg, #3d2b1f, #2a1f14);
+      border-color: rgba(212, 167, 106, 0.2);
+    }
+    .vibe-rainy {
+      background: linear-gradient(135deg, #1a2f3a, #0f1f2a);
+      border-color: rgba(110, 164, 196, 0.2);
+    }
+    .vibe-astronomy {
+      background: linear-gradient(135deg, #1a1040, #0f0a2a);
+      border-color: rgba(155, 142, 196, 0.2);
+    }
+    .vibe-gaming {
+      background: linear-gradient(135deg, #0d2137, #0a1520);
+      border-color: rgba(74, 222, 128, 0.2);
+    }
+    .vibe-minimal {
+      background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+      border-color: rgba(200, 200, 200, 0.15);
+    }
+    .vibe-cottage {
+      background: linear-gradient(135deg, #2d3a20, #1f2a15);
+      border-color: rgba(163, 184, 144, 0.2);
+    }
+    .vibe-lofi {
+      background: linear-gradient(135deg, #2a2040, #1a1530);
+      border-color: rgba(196, 144, 144, 0.2);
+    }
+    .vibe-ocean {
+      background: linear-gradient(135deg, #0a2a3a, #051a2a);
+      border-color: rgba(110, 180, 200, 0.2);
+    }
+    .vibe-default {
+      background: var(--bg-card);
+    }
+
+    .themes-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+    }
+    .theme-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--bg-card);
+      border: 2px solid var(--border-subtle);
+      border-radius: 100px;
+      font-size: 0.9rem;
+      font-family: var(--font-body);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .theme-chip:hover {
+      transform: translateY(-3px) scale(1.05);
+      border-color: var(--accent-green);
+      color: var(--text-primary);
+      box-shadow: 0 4px 15px rgba(124, 184, 124, 0.15);
+    }
+    .theme-chip.active {
+      border-color: var(--accent-green);
+      background: rgba(124, 184, 124, 0.1);
+      color: var(--accent-green);
+      transform: scale(1.05);
+    }
+    .theme-chip .chip-emoji { font-size: 1.1rem; }
+
+    .add-vibe-chip {
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+    }
+    .add-vibe-chip:hover {
+      border-color: var(--accent-gold);
+      color: var(--accent-gold);
+    }
+
+    /* ===================== NOTEBOOK SECTION ===================== */
+    .notebook-section .container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .notebook-content { max-width: 480px; }
+    .notebook-content .section-label,
+    .notebook-content .section-title,
+    .notebook-content .section-description { text-align: left; margin-left: 0; }
+    .notebook-features { list-style: none; margin-top: 32px; }
+    .notebook-features li {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 0;
+      color: var(--text-secondary);
+      font-size: 0.95rem;
+    }
+    .notebook-features li .feature-icon {
+      width: 32px; height: 32px;
+      border-radius: var(--radius-sm);
+      background: rgba(124, 184, 124, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .notebook-preview {
+      background: var(--bg-card);
+      border: 1px solid var(--border-leaf);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+    }
+    .notebook-preview-header {
+      padding: 20px 28px;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .notebook-cover {
+      width: 48px; height: 72px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #2d4a2d, #3d6b3d);
+      flex-shrink: 0;
+    }
+    .notebook-meta h4 {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .notebook-meta p { font-size: 0.8rem; color: var(--text-muted); }
+    .notebook-stars { color: var(--accent-gold); font-size: 0.9rem; margin-top: 4px; }
+
+    .notebook-preview-body { padding: 28px; }
+    .notebook-entry { margin-bottom: 20px; }
+    .notebook-entry:last-child { margin-bottom: 0; }
+    .notebook-entry-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-green);
+      margin-bottom: 6px;
+    }
+    .notebook-entry p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      font-style: italic;
+    }
+    .notebook-entry-quote {
+      padding-left: 16px;
+      border-left: 2px solid var(--accent-green);
+    }
+    .notebook-preview-footer {
+      padding: 16px 28px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .notebook-date { font-size: 0.75rem; color: var(--text-muted); }
+    .share-btn {
+      font-size: 0.75rem;
+      color: var(--accent-green);
+      background: rgba(124, 184, 124, 0.1);
+      padding: 6px 14px;
+      border-radius: 100px;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+    .share-btn:hover { background: rgba(124, 184, 124, 0.2); }
+
+    /* ===================== CUSTOM ROOMS ===================== */
+    .custom-rooms { text-align: center; }
+    .custom-rooms-visual {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 40px;
+    }
+    .custom-room-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      cursor: pointer;
+    }
+    .custom-room-chip:hover {
+      border-color: var(--accent-green);
+      color: var(--text-primary);
+      background: var(--bg-card-hover);
+      transform: translateY(-3px) scale(1.03);
+    }
+    .add-room-chip {
+      border-style: dashed;
+      border-color: rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+    }
+    .add-room-chip:hover {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    /* ===================== CTA SECTION ===================== */
+    .cta-section {
+      text-align: center;
+      position: relative;
+    }
+    .cta-section::before {
+      content: "";
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px; height: 300px;
+      background: radial-gradient(ellipse, var(--glow-green), transparent 70%);
+      pointer-events: none;
+      opacity: 0.4;
+    }
+    .cta-section .section-title { font-size: 2.5rem; position: relative; }
+    .cta-section .section-description { margin-bottom: 40px; position: relative; }
+    .cta-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      position: relative;
+    }
+
+    /* ===================== FOOTER ===================== */
+    .footer {
+      padding: 40px 0;
+      border-top: 1px solid var(--border-leaf);
+    }
+    .footer .container {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .footer-left {
+      font-family: var(--font-heading);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .footer-left span { color: var(--accent-green); }
+    .footer-links { display: flex; gap: 24px; list-style: none; }
+    .footer-links a {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: var(--transition-fast);
+    }
+    .footer-links a:hover { color: var(--text-primary); }
+
+    /* ===================== SCROLL ANIMATION ===================== */
+    .fade-up {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===================== RESPONSIVE ===================== */
+    @media (max-width: 1024px) {
+      .hero .container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        text-align: center;
+      }
+      .hero-content { max-width: 100%; }
+      .hero-description { max-width: 100%; margin-left: auto; margin-right: auto; }
+      .hero-buttons { justify-content: center; }
+      .room-preview { max-width: 500px; margin: 0 auto; }
+      .notebook-section .container { grid-template-columns: 1fr; gap: 40px; }
+      .notebook-content .section-label,
+      .notebook-content .section-title,
+      .notebook-content .section-description { text-align: center; }
+      .notebook-preview { max-width: 500px; margin: 0 auto; }
+      .character { display: none; }
+    }
+
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.2rem; }
+      .section-title { font-size: 1.8rem; }
+      .rooms-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; }
+      .footer .container { flex-direction: column; gap: 20px; text-align: center; }
+      .footer-links { flex-wrap: wrap; justify-content: center; }
+      .cta-section .section-title { font-size: 2rem; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-title { font-size: 1.8rem; }
+      .hero-buttons { flex-direction: column; align-items: center; }
+      .btn-lg { width: 100%; max-width: 280px; }
+      .custom-rooms-visual { flex-direction: column; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Scene -->
+  <div class="bg-scene">
+    <div class="leaf">🍃</div>
+    <div class="leaf">🌿</div>
+    <div class="leaf">🍂</div>
+    <div class="leaf">🍃</div>
+    <div class="leaf">🌿</div>
+    <div class="leaf">🍂</div>
+    <div class="leaf">🍃</div>
+    <div class="leaf">🌿</div>
+    <div class="firefly"></div>
+    <div class="firefly"></div>
+    <div class="firefly"></div>
+    <div class="firefly"></div>
+    <div class="firefly"></div>
+    <div class="firefly"></div>
+  </div>
+  <div class="ambient-glow glow-1"></div>
+  <div class="ambient-glow glow-2"></div>
+
+  <!-- Characters -->
+  <div class="character char-cat">🐱</div>
+  <div class="character char-plant">🪴</div>
+  <div class="character char-book">📚</div>
+  <div class="character char-lamp">🏮</div>
+
+  <div class="page-content">
+
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <div class="container">
+        <a href="index.html" class="logo">Media<span>Nest</span></a>
+        <div class="nav-actions">
+          <a href="login.html" class="btn btn-ghost">Log in</a>
+          <a href="login.html#signup" class="btn btn-primary">Create your space</a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-content">
+          <span class="hero-label">
+            <i class="hero-label-icon">🌿</i> Your personal media space
+          </span>
+          <h1 class="hero-title">
+            A cozy space for the films, books, and songs you want to
+            <span class="highlight">keep close</span>
+          </h1>
+          <p class="hero-description">
+            Track what you watch, read, and listen to inside themed rooms.
+            Leave behind notes, ratings, favorite scenes, lines, and lyrics —
+            like pages in a personal notebook.
+          </p>
+          <div class="hero-buttons">
+            <a href="login.html#signup" class="btn btn-primary btn-lg">🌱 Create your space</a>
+            <a href="login.html" class="btn btn-outline btn-lg">Log in</a>
+          </div>
+        </div>
+
+        <div class="room-preview">
+          <div class="room-scene">
+            <div class="room-header">
+              <div class="room-header-icon">🎬</div>
+              <div class="room-header-text">
+                <h3>Screen Room</h3>
+                <p>6 items on your shelf</p>
+              </div>
+            </div>
+            <div class="shelf">
+              <div class="shelf-item shelf-item-1"><div class="shelf-item-title">Interstellar</div></div>
+              <div class="shelf-item shelf-item-2"><div class="shelf-item-title">Breaking Bad</div></div>
+              <div class="shelf-item shelf-item-3"><div class="shelf-item-title">Whiplash</div></div>
+              <div class="shelf-item shelf-item-4"><div class="shelf-item-title">Dark</div></div>
+              <div class="shelf-item shelf-item-5"><div class="shelf-item-title">Arrival</div></div>
+              <div class="shelf-item shelf-item-6"><div class="shelf-item-title">Mr. Robot</div></div>
+            </div>
+            <div class="mini-notebook">
+              <div class="mini-notebook-header">
+                <div class="mini-notebook-dot"></div>
+                <span class="mini-notebook-title">Latest note</span>
+              </div>
+              <p>"Do not go gentle into that good night..." — Interstellar</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROOMS -->
+    <section class="rooms-section">
+      <div class="container">
+        <p class="section-label fade-up">🏡 Your rooms</p>
+        <h2 class="section-title fade-up">What you can keep here</h2>
+        <p class="section-description fade-up">
+          Start with three rooms. Keep movies and series together, save
+          books and quotes, or build a music corner for songs and lyrics.
+        </p>
+        <div class="rooms-grid">
+          <div class="room-card room-card-screen fade-up">
+            <div class="room-card-icon">🎬</div>
+            <h3>Screen Room</h3>
+            <p>Keep movies and series together — or split them later if you prefer.</p>
+            <div class="room-card-tags">
+              <span class="room-tag">movies</span>
+              <span class="room-tag">series</span>
+              <span class="room-tag">scenes</span>
+            </div>
+          </div>
+          <div class="room-card room-card-books fade-up">
+            <div class="room-card-icon">📖</div>
+            <h3>Books Room</h3>
+            <p>Remember the stories, pages, and quotes that stayed with you.</p>
+            <div class="room-card-tags">
+              <span class="room-tag">books</span>
+              <span class="room-tag">quotes</span>
+              <span class="room-tag">thoughts</span>
+            </div>
+          </div>
+          <div class="room-card room-card-music fade-up">
+            <div class="room-card-icon">🎵</div>
+            <h3>Music Room</h3>
+            <p>Save songs, albums, and lyrics that remember your moods.</p>
+            <div class="room-card-tags">
+              <span class="room-tag">songs</span>
+              <span class="room-tag">albums</span>
+              <span class="room-tag">lyrics</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- THEMES / VIBES -->
+    <section class="themes-section">
+      <div class="container">
+        <p class="section-label fade-up">🎨 Choose your vibe</p>
+        <h2 class="section-title fade-up">Every room starts with a mood</h2>
+        <p class="section-description fade-up">
+          Pick a theme that feels like you. Click to preview how your space could look.
+        </p>
+
+        <!-- Preview area -->
+        <div class="vibe-preview-area vibe-default fade-up" id="vibePreview">
+          <div class="preview-emoji">🌿</div>
+          <div class="preview-title">Pick a vibe to preview</div>
+          <div class="preview-desc">Click any theme below to see how it feels</div>
+        </div>
+
+        <!-- Theme chips -->
+        <div class="themes-grid fade-up">
+          <button class="theme-chip" data-vibe="cozy" data-emoji="🕯️" data-title="Cozy" data-desc="Warm browns, golden light, wooden shelves, and the smell of old books">
+            <span class="chip-emoji">🕯️</span> Cozy
+          </button>
+          <button class="theme-chip" data-vibe="rainy" data-emoji="🌧️" data-title="Rainy" data-desc="Cool blues, misty windows, soft drizzle, and a cup of tea nearby">
+            <span class="chip-emoji">🌧️</span> Rainy
+          </button>
+          <button class="theme-chip" data-vibe="astronomy" data-emoji="🌌" data-title="Astronomy" data-desc="Deep purples, starlight, floating constellations, and cosmic calm">
+            <span class="chip-emoji">🌌</span> Astronomy
+          </button>
+          <button class="theme-chip" data-vibe="gaming" data-emoji="🎮" data-title="Gaming" data-desc="Neon greens, dark panels, electric glow, and pixel energy">
+            <span class="chip-emoji">🎮</span> Gaming
+          </button>
+          <button class="theme-chip" data-vibe="minimal" data-emoji="◻️" data-title="Minimal" data-desc="Clean grays, quiet whites, sharp edges, and breathing space">
+            <span class="chip-emoji">◻️</span> Minimal
+          </button>
+          <button class="theme-chip" data-vibe="cottage" data-emoji="🌻" data-title="Cottagecore" data-desc="Soft greens, wildflowers, handwritten notes, and garden light">
+            <span class="chip-emoji">🌻</span> Cottagecore
+          </button>
+          <button class="theme-chip" data-vibe="lofi" data-emoji="🎧" data-title="Lo-fi" data-desc="Muted purples, vinyl crackle, late-night warmth, and soft beats">
+            <span class="chip-emoji">🎧</span> Lo-fi
+          </button>
+          <button class="theme-chip" data-vibe="ocean" data-emoji="🌊" data-title="Ocean" data-desc="Deep teals, gentle waves, salt air, and horizon calm">
+            <span class="chip-emoji">🌊</span> Ocean
+          </button>
+          <button class="theme-chip add-vibe-chip">
+            <span class="chip-emoji">✨</span> Suggest a vibe
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTEBOOK -->
+    <section class="notebook-section">
+      <div class="container">
+        <div class="notebook-content fade-up">
+          <p class="section-label">📝 More than tracking</p>
+          <h2 class="section-title">Every favorite deserves a page</h2>
+          <p class="section-description">
+            Click on anything you've saved and open a notebook-style page.
+            Write what stayed with you.
+          </p>
+          <ul class="notebook-features">
+            <li><span class="feature-icon">⭐</span> Rate with stars or your own scale</li>
+            <li><span class="feature-icon">🎬</span> Save your favorite scene or moment</li>
+            <li><span class="feature-icon">💬</span> Keep quotes, lyrics, and lines</li>
+            <li><span class="feature-icon">📝</span> Write your honest thoughts</li>
+            <li><span class="feature-icon">🔗</span> Share entries to social platforms</li>
+          </ul>
+        </div>
+        <div class="notebook-preview fade-up">
+          <div class="notebook-preview-header">
+            <div class="notebook-cover"></div>
+            <div class="notebook-meta">
+              <h4>Interstellar</h4>
+              <p>Christopher Nolan · 2014</p>
+              <div class="notebook-stars">★★★★★</div>
+            </div>
+          </div>
+          <div class="notebook-preview-body">
+            <div class="notebook-entry">
+              <div class="notebook-entry-label">Favorite Scene</div>
+              <p>The docking sequence — when Cooper matches the spin of the Endurance.</p>
+            </div>
+            <div class="notebook-entry">
+              <div class="notebook-entry-label">Favorite Line</div>
+              <div class="notebook-entry-quote">
+                <p>"Do not go gentle into that good night. Rage, rage against the dying of the light."</p>
+              </div>
+            </div>
+            <div class="notebook-entry">
+              <div class="notebook-entry-label">Thoughts</div>
+              <p>This felt huge and lonely and beautiful all at once. The kind of movie that makes you stare at the ceiling for an hour after.</p>
+            </div>
+          </div>
+          <div class="notebook-preview-footer">
+            <span class="notebook-date">Watched: March 14, 2025</span>
+            <button class="share-btn">Share this page</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CUSTOM ROOMS -->
+    <section class="custom-rooms">
+      <div class="container">
+        <p class="section-label fade-up">🚪 Make it yours</p>
+        <h2 class="section-title fade-up">Add more rooms anytime</h2>
+        <p class="section-description fade-up">
+          Start with Screen, Books, and Music. Then grow your world however you want.
+        </p>
+        <div class="custom-rooms-visual fade-up">
+          <div class="custom-room-chip"><span class="chip-icon">🎮</span> Games</div>
+          <div class="custom-room-chip"><span class="chip-icon">🎙️</span> Podcasts</div>
+          <div class="custom-room-chip"><span class="chip-icon">⛩️</span> Anime</div>
+          <div class="custom-room-chip"><span class="chip-icon">📺</span> K-drama</div>
+          <div class="custom-room-chip"><span class="chip-icon">🎭</span> Documentaries</div>
+          <div class="custom-room-chip"><span class="chip-icon">🔁</span> Rewatches</div>
+          <div class="custom-room-chip"><span class="chip-icon">✍️</span> Poetry</div>
+          <div class="custom-room-chip add-room-chip"><span class="chip-icon">+</span> Your room</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+      <div class="container">
+        <p class="section-label fade-up">🌱 Ready?</p>
+        <h2 class="section-title fade-up">Build your own little media world</h2>
+        <p class="section-description fade-up">
+          A quiet space for everything that stayed with you — films, stories, songs, and the feelings they left behind.
+        </p>
+        <div class="cta-buttons fade-up">
+          <a href="login.html#signup" class="btn btn-primary btn-lg">🌱 Create your space</a>
+          <a href="login.html" class="btn btn-outline btn-lg">Log in</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+      <div class="container">
+        <div class="footer-left">Media<span>Nest</span></div>
+        <ul class="footer-links">
+          <li><a href="#">About</a></li>
+          <li><a href="#">Contact</a></li>
+          <li><a href="#">Privacy</a></li>
+          <li><a href="#">Twitter</a></li>
+          <li><a href="#">Instagram</a></li>
+        </ul>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    // Scroll animations
+    const fadeEls = document.querySelectorAll('.fade-up');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+      });
+    }, { threshold: 0.15 });
+    fadeEls.forEach((el) => observer.observe(el));
+
+    // Vibe preview
+    const vibePreview = document.getElementById('vibePreview');
+    const themeChips = document.querySelectorAll('.theme-chip[data-vibe]');
+
+    themeChips.forEach((chip) => {
+      chip.addEventListener('click', () => {
+        themeChips.forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        const vibe = chip.dataset.vibe;
+        const emoji = chip.dataset.emoji;
+        const title = chip.dataset.title;
+        const desc = chip.dataset.desc;
+
+        vibePreview.className = 'vibe-preview-area vibe-' + vibe;
+        vibePreview.innerHTML = `
+          <div class="preview-emoji">${emoji}</div>
+          <div class="preview-title">${title}</div>
+          <div class="preview-desc">${desc}</div>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>

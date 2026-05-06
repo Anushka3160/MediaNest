@@ -1,0 +1,52 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  rooms        Room[]
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String
+  theme     String   @default("forest")
+  type      String   @default("custom")
+  color     String?
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries   Entry[]
+}
+
+model Entry {
+  id            String    @id @default(cuid())
+  title         String
+  type          String                      
+  creator       String?                     
+  coverUrl      String?
+  previewUrl    String? 
+  status        String    @default("want")  
+  rating        Int?
+  favScene      String?
+  favLine       String?
+  thoughts      String?
+  year          Int?
+  color         Int?
+  size          String?
+  addedAt       DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  roomId        String
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+}

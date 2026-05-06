@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediaNest — Your Room</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --wall-dark: #1f2e1c; --wall-mid: #2a3b27; --wall-light: #344a33;
+      --floor-dark: #2a1f15; --floor-mid: #3a2b1e; --floor-light: #4a3725;
+      --text-primary: #e8e4d9; --text-secondary: #b8b4a4; --text-muted: #8a8672;
+      --accent-green: #7cb87c; --accent-gold: #d4a76a;
+      --accent-rose: #c49090; --accent-blue: #6ea4c4;
+      --lamp-glow: #f5c77a;
+      --border-leaf: rgba(124,184,124,0.15);
+      --font-heading: "Playfair Display", Georgia, serif;
+      --font-body: "Inter", -apple-system, sans-serif;
+      --bg-deep: #0f1f10;
+    }
+    body { font-family: var(--font-body); background-color: var(--bg-deep); color: var(--text-primary); min-height: 100vh; overflow: hidden; user-select: none; transition: background-color 1.2s ease; }
+    body.lamp-off { background-color: #0a1420; }
+    body.lamp-off .wall { background: linear-gradient(180deg,#121c24,#1a2634,#1f2d3e) !important; }
+    body.lamp-off .floor { background: linear-gradient(180deg,#151c22,#1d262e,#26313a) !important; }
+    body.lamp-off .lamp-glow { opacity: 0 !important; }
+    body.lamp-off .ambient-blue-light { opacity: 1; }
+    body.lamp-off .night-stars { opacity: 1; }
+
+    .top-bar { position: fixed; top: 0; left: 0; right: 0; padding: 16px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 100; background: linear-gradient(180deg,rgba(15,31,16,0.9),transparent); pointer-events: none; }
+    .top-bar > * { pointer-events: auto; }
+    .logo { font-family: var(--font-heading); font-size: 1.3rem; font-weight: 700; color: var(--text-primary); text-decoration: none; }
+    .logo span { color: var(--accent-green); }
+    .top-right { display: flex; align-items: center; gap: 12px; }
+    .icon-btn { width: 38px; height: 38px; border-radius: 50%; background: rgba(36,55,38,0.7); border: 1px solid var(--border-leaf); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; backdrop-filter: blur(10px); transition: all 0.3s ease; }
+    .icon-btn:hover { color: var(--accent-green); border-color: var(--accent-green); transform: translateY(-2px); }
+    .icon-btn.playing { color: var(--accent-gold); border-color: var(--accent-gold); }
+    .user-chip { display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: rgba(36,55,38,0.7); border: 1px solid var(--border-leaf); border-radius: 100px; backdrop-filter: blur(10px); cursor: pointer; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg,var(--accent-green),#5a9e5a); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+    .username { font-size: 0.85rem; color: var(--text-secondary); }
+
+    .room-stage { position: fixed; inset: 0; overflow: hidden; }
+    .wall { position: absolute; top: 0; left: 0; right: 0; height: 62%; background: linear-gradient(180deg,var(--wall-dark),var(--wall-mid),var(--wall-light)); transition: background 1.2s ease; }
+    .wall::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 80%,rgba(245,199,122,0.08),transparent 60%),radial-gradient(ellipse at 15% 30%,rgba(124,184,124,0.05),transparent 50%); }
+    .floor { position: absolute; bottom: 0; left: 0; right: 0; height: 38%; background: linear-gradient(180deg,var(--floor-dark),var(--floor-mid),var(--floor-light)); transition: background 1.2s ease; }
+    .floor::before { content: ""; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg,transparent,transparent 80px,rgba(0,0,0,0.15) 80px,rgba(0,0,0,0.15) 82px); opacity: 0.6; }
+    .floor::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(0,0,0,0.3); }
+
+    .ambient-blue-light { position: absolute; inset: 0; background: radial-gradient(ellipse at 30% 40%,rgba(74,106,138,0.25),transparent 50%),radial-gradient(ellipse at 70% 60%,rgba(155,142,196,0.18),transparent 50%); opacity: 0; transition: opacity 1.2s ease; pointer-events: none; }
+    .night-stars { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s ease; pointer-events: none; }
+    .night-stars span { position: absolute; width: 2px; height: 2px; background: #fff; border-radius: 50%; box-shadow: 0 0 4px #fff; animation: starTwinkle 3s infinite ease-in-out; }
+    @keyframes starTwinkle { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+    .wall-window { position: absolute; top: 5%; left: 50%; transform: translateX(-50%); width: 180px; height: 110px; background: linear-gradient(180deg,#2a4055,#3a5a70,#4a7090); border: 6px solid #2a1f15; border-radius: 4px; box-shadow: inset 0 0 30px rgba(0,0,0,0.4),0 4px 15px rgba(0,0,0,0.4); overflow: hidden; transition: background 1.2s ease; }
+    body.lamp-off .wall-window { background: linear-gradient(180deg,#0a1525,#1a2540,#2a3050); }
+    .wall-window::before { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 30% 40%,rgba(245,237,214,0.4),transparent 30%),radial-gradient(circle at 70% 60%,rgba(245,237,214,0.2),transparent 25%); }
+    .wall-window::after { content: ""; position: absolute; top: 50%; left: 0; right: 0; height: 3px; background: #2a1f15; transform: translateY(-50%); box-shadow: 0 55px 0 -1.5px #2a1f15; }
+    .window-moon { position: absolute; top: 20%; right: 20%; width: 26px; height: 26px; border-radius: 50%; background: radial-gradient(circle,#f5edd6,#e0c097); box-shadow: 0 0 20px rgba(245,237,214,0.6); }
+
+    .hanging-lamp { position: absolute; top: 0; left: 15%; width: 2px; height: 100px; background: #1a1208; z-index: 5; }
+    .lamp-shade { position: absolute; top: 100px; left: 15%; transform: translateX(-50%); width: 44px; height: 32px; background: radial-gradient(ellipse at top,#4a3725,#2a1f15); border-radius: 50% 50% 30% 30%; box-shadow: 0 0 40px var(--lamp-glow),0 0 80px rgba(245,199,122,0.3); cursor: pointer; transition: all 0.4s ease; z-index: 5; }
+    .lamp-shade:hover { transform: translateX(-50%) scale(1.1); }
+    body.lamp-off .lamp-shade { box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+    .lamp-glow { position: absolute; top: 116px; left: 15%; transform: translateX(-50%); width: 280px; height: 280px; background: radial-gradient(circle,rgba(245,199,122,0.3),transparent 60%); pointer-events: none; animation: lampFlicker 4s infinite ease-in-out; transition: opacity 1.2s ease; z-index: 4; }
+    @keyframes lampFlicker { 0%,100%{opacity:0.9} 50%{opacity:1} }
+
+    .fairy-lights { position: absolute; top: 2%; left: 5%; right: 5%; height: 30px; display: none; justify-content: space-between; align-items: flex-start; z-index: 3; pointer-events: none; }
+    .fairy-lights.active { display: flex; }
+    .fairy-lights::before { content: ""; position: absolute; top: 8px; left: 0; right: 0; height: 1px; background: #3a2b1e; }
+    .fairy-lights span { position: relative; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-gold); box-shadow: 0 0 8px var(--accent-gold); margin-top: 6px; animation: fairyTwinkle 2s infinite ease-in-out; }
+    .fairy-lights span:nth-child(2n) { background: var(--accent-rose); box-shadow: 0 0 8px var(--accent-rose); animation-delay: 0.4s; }
+    .fairy-lights span:nth-child(3n) { background: var(--accent-blue); box-shadow: 0 0 8px var(--accent-blue); animation-delay: 0.8s; }
+    @keyframes fairyTwinkle { 0%,100%{opacity:0.5} 50%{opacity:1} }
+
+    .wall-plant { position: absolute; top: 10%; right: 6%; font-size: 3.2rem; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.4)); animation: plantSway 5s infinite ease-in-out; z-index: 2; }
+    @keyframes plantSway { 0%,100%{transform:rotate(-2deg)} 50%{transform:rotate(2deg)} }
+    .wall-clock { position: absolute; top: 8%; right: 22%; width: 48px; height: 48px; border-radius: 50%; background: radial-gradient(circle,#e0c097,#a88755); border: 3px solid #2a1f15; box-shadow: 0 3px 10px rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 2; }
+    .wall-clock.active { display: flex; }
+    .wall-clock::before { content: ""; position: absolute; width: 2px; height: 14px; background: #2a1f15; border-radius: 2px; top: 8px; left: 50%; transform: translateX(-50%) rotate(30deg); }
+    .wall-clock::after { content: ""; position: absolute; width: 2px; height: 18px; background: #2a1f15; border-radius: 2px; top: 4px; left: 50%; transform: translateX(-50%) rotate(-60deg); }
+    .wall-frame { position: absolute; top: 12%; left: 25%; width: 70px; height: 90px; background: linear-gradient(135deg,#3d5a3d,#2d4a2d); border: 4px solid #2a1f15; border-radius: 3px; box-shadow: 0 4px 10px rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; font-size: 1.6rem; z-index: 2; }
+    .wall-frame.active { display: flex; }
+
+    .bookshelf { position: absolute; top: 18%; left: 30px; width: 90px; height: 140px; background: linear-gradient(180deg,#3a2b1e,#2a1f15); border-radius: 4px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); padding: 6px; display: flex; flex-direction: column; gap: 3px; z-index: 2; }
+    .bookshelf-row { flex: 1; background: #1a1208; border-radius: 2px; padding: 3px; display: flex; gap: 2px; align-items: flex-end; }
+    .book-spine { flex: 1; border-radius: 1px; }
+    .book-spine:nth-child(1){background:#7cb87c;height:90%} .book-spine:nth-child(2){background:#d4a76a;height:75%} .book-spine:nth-child(3){background:#9b8ec4;height:95%} .book-spine:nth-child(4){background:#c49090;height:80%} .book-spine:nth-child(5){background:#6ea4c4;height:88%}
+
+    .floor-rug { position: absolute; bottom: 8%; left: 50%; transform: translateX(-50%); width: 60%; max-width: 600px; height: 40px; background: radial-gradient(ellipse,#6b4a3a,#4a3725 60%,transparent); border-radius: 50%; display: none; z-index: 1; }
+    .floor-rug.active { display: block; }
+    .floor-cat { position: absolute; bottom: 12%; left: 8%; font-size: 2.2rem; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); display: none; animation: catBreathe 4s infinite ease-in-out; z-index: 3; }
+    .floor-cat.active { display: block; }
+    @keyframes catBreathe { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+    .floor-plant-small { position: absolute; bottom: 14%; right: 6%; font-size: 2rem; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); display: none; z-index: 3; }
+    .floor-plant-small.active { display: block; }
+    .floor-teacup { position: absolute; bottom: 15%; right: 18%; font-size: 1.6rem; filter: drop-shadow(0 3px 6px rgba(0,0,0,0.5)); display: none; z-index: 3; animation: steamRise 3s infinite ease-in-out; }
+    .floor-teacup.active { display: block; }
+    @keyframes steamRise { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+    .dust-particle { position: absolute; width: 3px; height: 3px; background: var(--accent-gold); border-radius: 50%; opacity: 0; box-shadow: 0 0 6px var(--accent-gold); pointer-events: none; z-index: 2; }
+    .dust-1{left:20%;top:40%;animation:floatDust 6s infinite ease-in-out}
+    .dust-2{left:60%;top:30%;animation:floatDust 8s infinite ease-in-out 2s}
+    .dust-3{left:80%;top:50%;animation:floatDust 7s infinite ease-in-out 1s}
+    .dust-4{left:35%;top:25%;animation:floatDust 9s infinite ease-in-out 3s}
+    .dust-5{left:75%;top:20%;animation:floatDust 6.5s infinite ease-in-out 4s}
+    @keyframes floatDust { 0%,100%{opacity:0;transform:translate(0,0)} 25%{opacity:0.6} 50%{opacity:0.4;transform:translate(20px,-30px)} 75%{opacity:0.5;transform:translate(-10px,-50px)} }
+    .dust-particle.off { animation: none !important; opacity: 0 !important; }
+
+    .room-title { position: absolute; top: 24%; left: 50%; transform: translateX(-50%); text-align: center; z-index: 15; pointer-events: none; padding: 0 20px; width: 100%; }
+    .room-title h1 { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; text-shadow: 0 2px 12px rgba(0,0,0,0.7); }
+    .room-title p { font-size: 0.85rem; color: var(--text-secondary); font-style: italic; text-shadow: 0 2px 8px rgba(0,0,0,0.6); }
+
+    .doors-row { position: absolute; bottom: 32%; left: 0; right: 0; display: flex; justify-content: center; gap: 36px; padding: 0 60px; z-index: 10; flex-wrap: wrap; }
+    .door { position: relative; width: 120px; height: 180px; cursor: pointer; transition: transform 0.3s ease; }
+    .door:hover { transform: translateY(-4px); }
+    .door:hover .door-label { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .door:hover .door-frame { box-shadow: 0 0 0 3px rgba(124,184,124,0.3),0 10px 30px rgba(0,0,0,0.6); }
+    .door-frame { position: absolute; inset: 0; background: linear-gradient(180deg,#3a2a1a,#2a1f15); border-radius: 60px 60px 0 0; padding: 8px; box-shadow: 0 6px 20px rgba(0,0,0,0.5),inset 0 2px 4px rgba(255,255,255,0.05); transition: box-shadow 0.3s ease; }
+    .door-panel { position: relative; width: 100%; height: 100%; background: linear-gradient(180deg,#4a3725,#3a2b1e); border-radius: 54px 54px 0 0; overflow: hidden; transform-origin: left center; transition: transform 1.2s cubic-bezier(0.6,0,0.4,1); }
+    .door.opening .door-panel { transform: perspective(400px) rotateY(-75deg); }
+    .door-panel::before { content: ""; position: absolute; top: 20%; left: 50%; transform: translateX(-50%); width: 60%; height: 28%; border: 2px solid rgba(0,0,0,0.3); border-radius: 30px 30px 0 0; }
+    .door-panel::after { content: ""; position: absolute; top: 55%; left: 50%; transform: translateX(-50%); width: 60%; height: 25%; border: 2px solid rgba(0,0,0,0.3); border-radius: 4px; }
+    .door-icon { position: absolute; top: 28%; left: 50%; transform: translateX(-50%); font-size: 1.7rem; z-index: 2; }
+    .door-knob { position: absolute; right: 12px; top: 55%; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-gold); box-shadow: 0 0 6px rgba(212,167,106,0.6); z-index: 3; }
+    .door-screen .door-panel { background: linear-gradient(180deg,#3d5a3d,#2d4a2d); }
+    .door-books .door-panel { background: linear-gradient(180deg,#5a4a2a,#4a3a1a); }
+    .door-music .door-panel { background: linear-gradient(180deg,#4a3a5a,#3a2a4a); }
+    .door-inside { position: absolute; inset: 8px; border-radius: 54px 54px 0 0; background: radial-gradient(ellipse at center,var(--lamp-glow),transparent 70%); opacity: 0; transition: opacity 0.5s ease 0.3s; z-index: 0; }
+    .door.opening .door-inside { opacity: 0.6; }
+    .door-label { position: absolute; top: -40px; left: 50%; transform: translateX(-50%) translateY(10px); background: rgba(36,55,38,0.95); border: 1px solid var(--border-leaf); border-radius: 100px; padding: 6px 14px; font-size: 0.8rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; opacity: 0; transition: all 0.3s ease; backdrop-filter: blur(10px); pointer-events: none; }
+    .door-mat { position: absolute; bottom: -10px; left: 50%; transform: translateX(-50%); width: 140%; height: 14px; background: radial-gradient(ellipse,rgba(0,0,0,0.4),transparent 70%); border-radius: 50%; }
+    .door-add { width: 90px; height: 140px; display: flex; align-items: center; justify-content: center; background: rgba(255,255,255,0.03); border: 2px dashed rgba(124,184,124,0.3); border-radius: 45px 45px 0 0; color: var(--accent-green); font-size: 1.8rem; cursor: pointer; transition: all 0.3s ease; align-self: flex-end; margin-bottom: 10px; }
+    .door-add:hover { background: rgba(124,184,124,0.08); border-color: var(--accent-green); transform: translateY(-4px); }
+    .door-delete { position: absolute; top: -10px; right: -10px; width: 22px; height: 22px; border-radius: 50%; background: rgba(180,60,60,0.9); border: 1px solid rgba(255,100,100,0.4); color: #fff; font-size: 0.65rem; display: none; align-items: center; justify-content: center; cursor: pointer; z-index: 20; }
+    .door:hover .door-delete { display: flex; }
+
+    .character { position: absolute; bottom: 15%; left: 50%; transform: translateX(-50%); width: 50px; height: 70px; z-index: 20; transition: left 1.8s cubic-bezier(0.5,0,0.5,1); }
+    .char-body { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 36px; height: 40px; background: linear-gradient(180deg,#a3b890,#7cb87c); border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%; box-shadow: 0 4px 10px rgba(0,0,0,0.4); }
+    .char-head { position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%); width: 28px; height: 28px; background: radial-gradient(circle at 35% 35%,#f5edd6,#e0c097); border-radius: 50%; box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+    .char-head::before,.char-head::after { content: ""; position: absolute; top: 45%; width: 3px; height: 4px; background: #2a1f15; border-radius: 50%; }
+    .char-head::before{left:28%}.char-head::after{right:28%}
+    .char-hat { position: absolute; bottom: 52px; left: 50%; transform: translateX(-50%); width: 24px; height: 10px; background: var(--accent-green); border-radius: 50% 50% 20% 20%; }
+    .char-hat::before { content: ""; position: absolute; top: -4px; left: 50%; transform: translateX(-50%); width: 6px; height: 6px; background: var(--accent-gold); border-radius: 50%; }
+    .char-shadow { position: absolute; bottom: -5px; left: 50%; transform: translateX(-50%); width: 40px; height: 8px; background: radial-gradient(ellipse,rgba(0,0,0,0.5),transparent 70%); border-radius: 50%; }
+    .character.walking .char-body,.character.walking .char-head,.character.walking .char-hat { animation: walkBob 0.5s infinite ease-in-out; }
+    @keyframes walkBob { 0%,100%{transform:translateX(-50%) translateY(0)} 50%{transform:translateX(-50%) translateY(-3px)} }
+    .character.idle .char-body { animation: idleBreathe 3s infinite ease-in-out; }
+    @keyframes idleBreathe { 0%,100%{transform:translateX(-50%) scaleY(1)} 50%{transform:translateX(-50%) scaleY(1.02)} }
+    .character.entering { opacity: 0; transform: translateX(-50%) scale(0.7); }
+
+    .decorate-tab { position: fixed; top: 50%; right: 0; transform: translateY(-50%); width: 42px; height: 100px; background: rgba(26,46,26,0.95); border: 1px solid var(--border-leaf); border-right: none; border-radius: 12px 0 0 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; color: var(--accent-green); z-index: 500; transition: background 0.25s, transform 0.3s; backdrop-filter: blur(10px); }
+    .decorate-tab:hover { background: rgba(36,66,36,0.98); }
+    .decorate-tab.panel-open { transform: translateY(-50%) translateX(-320px); }
+    .decorate-tab .tab-icon { font-size: 1.1rem; }
+    .decorate-tab .tab-label { font-size: 0.55rem; writing-mode: vertical-rl; color: var(--text-muted); }
+    .decorate-panel { position: fixed; top: 0; right: -340px; width: 320px; height: 100vh; background: rgba(15,28,15,0.97); border-left: 1px solid var(--border-leaf); z-index: 499; transition: right 0.35s cubic-bezier(0.4,0,0.2,1); overflow-y: auto; backdrop-filter: blur(20px); display: flex; flex-direction: column; }
+    .decorate-panel.open { right: 0; }
+    .panel-header { padding: 60px 24px 20px; border-bottom: 1px solid var(--border-leaf); }
+    .panel-header h3 { font-family: var(--font-heading); font-size: 1.2rem; color: var(--accent-green); margin-bottom: 4px; }
+    .panel-header p { font-size: 0.75rem; color: var(--text-muted); font-style: italic; }
+    .panel-body { padding: 20px 20px 100px; flex: 1; }
+    .decorate-section { margin-bottom: 22px; }
+    .decorate-section h4 { font-size: 0.75rem; font-weight: 600; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+    .theme-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+    .theme-item { padding: 10px 6px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.25s; text-align: center; font-size: 0.7rem; color: var(--text-secondary); }
+    .theme-item:hover { transform: translateY(-2px); }
+    .theme-item.active { border-color: var(--accent-green); color: var(--text-primary); }
+    .theme-preview { width: 100%; height: 24px; border-radius: 4px; margin-bottom: 6px; }
+    .theme-cozy .theme-preview{background:linear-gradient(135deg,#3d2b1f,#5a3e2a)}.theme-forest .theme-preview{background:linear-gradient(135deg,#1a2e1a,#344a33)}.theme-rainy .theme-preview{background:linear-gradient(135deg,#1a2f3a,#3a5a70)}.theme-cosmic .theme-preview{background:linear-gradient(135deg,#1a1040,#4a3a5a)}.theme-cottage .theme-preview{background:linear-gradient(135deg,#2d3a20,#a3b890)}.theme-sunset .theme-preview{background:linear-gradient(135deg,#3a2a1a,#c49090)}
+    .decor-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+    .decor-item { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02); }
+    .decor-item:hover { transform: scale(1.1); border-color: rgba(124,184,124,0.4); }
+    .decor-item.active { border-color: var(--accent-green); background: rgba(124,184,124,0.12); }
+    .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 10px; margin-bottom: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.04); }
+    .toggle-row:hover { background: rgba(255,255,255,0.06); }
+    .toggle-row .label-text { font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; }
+    .toggle-switch { width: 34px; height: 18px; background: rgba(255,255,255,0.1); border-radius: 100px; position: relative; flex-shrink: 0; transition: background 0.3s; }
+    .toggle-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; background: var(--text-muted); border-radius: 50%; transition: all 0.3s; }
+    .toggle-row.on .toggle-switch { background: rgba(124,184,124,0.35); }
+    .toggle-row.on .toggle-switch::after { left: 18px; background: var(--accent-green); }
+    .stats-quick { margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07); display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; text-align: center; }
+    .stat-quick { padding: 10px 4px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); }
+    .stat-quick .num { font-family: var(--font-heading); font-size: 1.1rem; font-weight: 700; color: var(--accent-green); }
+    .stat-quick .lbl { font-size: 0.65rem; color: var(--text-muted); margin-top: 2px; }
+    .panel-close { position: absolute; top: 16px; right: 16px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .panel-close:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+
+    .music-hint { position: fixed; bottom: 24px; left: 24px; display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: rgba(36,55,38,0.85); border: 1px solid var(--border-leaf); border-radius: 100px; backdrop-filter: blur(10px); font-size: 0.8rem; color: var(--text-secondary); z-index: 80; transition: opacity 0.6s; }
+    .music-hint.hidden { opacity: 0; pointer-events: none; }
+    .music-wave { display: flex; gap: 2px; align-items: flex-end; }
+    .music-wave span { width: 2px; background: var(--accent-green); border-radius: 2px; animation: wave 1s infinite ease-in-out; }
+    .music-wave span:nth-child(1){height:8px}.music-wave span:nth-child(2){height:12px;animation-delay:0.2s}.music-wave span:nth-child(3){height:6px;animation-delay:0.4s}.music-wave span:nth-child(4){height:10px;animation-delay:0.6s}
+    @keyframes wave { 0%,100%{transform:scaleY(0.5)} 50%{transform:scaleY(1)} }
+    .lamp-hint { position: fixed; top: 140px; left: 50px; background: rgba(36,55,38,0.9); border: 1px solid var(--border-leaf); border-radius: 12px; padding: 8px 14px; font-size: 0.75rem; color: var(--text-secondary); backdrop-filter: blur(10px); z-index: 15; transition: opacity 0.6s; pointer-events: none; }
+    .lamp-hint.hidden { opacity: 0; }
+    .transition-overlay { position: fixed; inset: 0; background: radial-gradient(circle at center,transparent,var(--bg-deep) 80%); opacity: 0; pointer-events: none; z-index: 200; transition: opacity 1s; }
+    .transition-overlay.show { opacity: 1; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 900; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; backdrop-filter: blur(4px); }
+    .modal-backdrop.show { opacity: 1; pointer-events: auto; }
+    .modal { width: 440px; max-width: 94vw; max-height: 90vh; overflow-y: auto; background: rgba(15,28,15,0.98); border: 1px solid var(--border-leaf); border-radius: 20px; padding: 28px 28px 24px; transform: scale(0.92) translateY(20px); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); position: relative; }
+    .modal-backdrop.show .modal { transform: scale(1) translateY(0); }
+    .modal h3 { font-family: var(--font-heading); font-size: 1.15rem; color: var(--accent-green); margin-bottom: 4px; }
+    .modal-sub { font-size: 0.75rem; color: var(--text-muted); font-style: italic; margin-bottom: 20px; }
+    .modal-close { position: absolute; top: 14px; right: 14px; width: 28px; height: 28px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .modal-close:hover { background: rgba(255,255,255,0.12); color: var(--text-primary); }
+    .modal-label { font-size: 0.75rem; color: var(--text-muted); display: block; margin-bottom: 6px; letter-spacing: 0.06em; text-transform: uppercase; }
+    .modal-input { width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--text-primary); font-family: var(--font-body); font-size: 0.9rem; outline: none; transition: border-color 0.2s; margin-bottom: 14px; }
+    .modal-input:focus { border-color: var(--accent-green); }
+    .modal-input::placeholder { color: var(--text-muted); }
+    select.modal-input { cursor: pointer; } select.modal-input option { background: #1a2e1a; }
+    .room-type-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 16px; }
+    .room-type-opt { padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; transition: all 0.2s; background: rgba(255,255,255,0.02); display: flex; align-items: center; gap: 8px; }
+    .room-type-opt:hover { border-color: rgba(124,184,124,0.3); }
+    .room-type-opt.selected { border-color: var(--accent-green); background: rgba(124,184,124,0.1); }
+    .room-type-opt .type-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .room-type-opt .type-name { font-size: 0.82rem; color: var(--text-primary); font-weight: 500; }
+    .room-type-opt .type-desc { font-size: 0.68rem; color: var(--text-muted); margin-top: 1px; }
+    .icon-picker { display: grid; grid-template-columns: repeat(6,1fr); gap: 8px; margin-bottom: 14px; }
+    .icon-opt { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); cursor: pointer; background: rgba(255,255,255,0.02); transition: all 0.2s; }
+    .icon-opt:hover { border-color: rgba(124,184,124,0.4); transform: scale(1.1); }
+    .icon-opt.selected { border-color: var(--accent-green); background: rgba(124,184,124,0.12); }
+    .color-picker-row { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+    .color-opt { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+    .color-opt:hover { transform: scale(1.15); }
+    .color-opt.selected { border-color: var(--text-primary); box-shadow: 0 0 0 2px rgba(255,255,255,0.2); }
+    .modal-actions { display: flex; gap: 10px; }
+    .btn-primary { flex: 1; padding: 10px; background: rgba(124,184,124,0.2); border: 1px solid var(--accent-green); border-radius: 10px; color: var(--accent-green); font-family: var(--font-body); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+    .btn-primary:hover { background: rgba(124,184,124,0.3); }
+    .btn-secondary { padding: 10px 18px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: var(--text-muted); font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
+    .btn-secondary:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+
+    .room-overlay { position: fixed; inset: 0; z-index: 800; display: flex; flex-direction: column; opacity: 0; pointer-events: none; transition: opacity 0.5s ease; }
+    .room-overlay.show { opacity: 1; pointer-events: auto; }
+    .room-overlay-bg { position: absolute; inset: 0; }
+    .overlay-wall { position: absolute; top: 0; left: 0; right: 0; height: 60%; }
+    .overlay-wall::before { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 100%,rgba(245,199,122,0.06),transparent 60%); }
+    .overlay-floor { position: absolute; bottom: 0; left: 0; right: 0; height: 40%; }
+    .overlay-floor::after { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: rgba(0,0,0,0.25); }
+    .room-overlay-content { position: relative; z-index: 2; display: flex; flex-direction: column; height: 100%; }
+    .overlay-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; background: rgba(0,0,0,0.35); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.07); }
+    .overlay-title-row { display: flex; align-items: center; gap: 10px; }
+    .overlay-room-icon { font-size: 1.5rem; }
+    .overlay-room-name { font-family: var(--font-heading); font-size: 1.1rem; color: var(--text-primary); }
+    .overlay-back { display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 100px; cursor: pointer; color: var(--text-secondary); font-size: 0.82rem; font-family: var(--font-body); transition: all 0.2s; }
+    .overlay-back:hover { background: rgba(255,255,255,0.13); color: var(--text-primary); }
+    .room-interior { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 20px 24px; gap: 16px; overflow-y: auto; }
+    .room-stats-bar { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+    .room-stat { padding: 7px 14px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 100px; font-size: 0.76rem; color: var(--text-secondary); backdrop-filter: blur(8px); }
+    .room-stat strong { color: var(--text-primary); font-weight: 600; }
+    .room-shelves { display: flex; flex-direction: column; gap: 18px; width: 100%; max-width: 700px; }
+    .shelf-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .shelf-label-text { font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; font-weight: 600; }
+    .shelf-board { background: linear-gradient(180deg,#3a2b1e,#2a1f15); border-radius: 4px 4px 0 0; padding: 10px 14px 14px; box-shadow: 0 6px 16px rgba(0,0,0,0.5); position: relative; }
+    .shelf-board::after { content: ""; position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: #1a1208; border-radius: 0 0 4px 4px; }
+    .shelf-items { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; min-height: 60px; padding-bottom: 2px; }
+    .shelf-empty { display: flex; align-items: center; color: var(--text-muted); font-size: 0.78rem; font-style: italic; min-height: 60px; width: 100%; }
+    .shelf-item { display: flex; flex-direction: column; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; }
+    .shelf-item:hover { transform: translateY(-5px); }
+    .shelf-item-cover { width: 42px; height: 58px; border-radius: 3px 5px 5px 3px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; position: relative; box-shadow: 2px 2px 8px rgba(0,0,0,0.5); }
+    .shelf-item-cover::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: rgba(0,0,0,0.25); border-radius: 3px 0 0 3px; }
+    .shelf-item-name { font-size: 0.58rem; color: var(--text-muted); text-align: center; max-width: 46px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .status-dot { position: absolute; top: 3px; right: 3px; width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.3); }
+    .status-dot.want { background: #8a8672; } .status-dot.doing { background: #7cb87c; } .status-dot.done { background: #d4a76a; }
+    .add-item-btn { display: flex; align-items: center; justify-content: center; width: 42px; height: 58px; border: 1.5px dashed rgba(124,184,124,0.35); border-radius: 3px; color: var(--accent-green); font-size: 1.4rem; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+    .add-item-btn:hover { border-color: var(--accent-green); background: rgba(124,184,124,0.08); transform: translateY(-5px); }
+
+    .item-popup { position: fixed; inset: 0; z-index: 850; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .item-popup.show { opacity: 1; pointer-events: auto; }
+    .item-popup-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .item-popup-card { position: relative; background: rgba(18,32,18,0.98); border: 1px solid var(--border-leaf); border-radius: 18px; padding: 24px; width: 320px; max-width: 90vw; transform: scale(0.88); transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+    .item-popup.show .item-popup-card { transform: scale(1); }
+    .item-popup-icon { font-size: 2.5rem; text-align: center; margin-bottom: 10px; }
+    .item-popup-name { font-family: var(--font-heading); font-size: 1.05rem; color: var(--text-primary); text-align: center; margin-bottom: 4px; }
+    .item-popup-meta { font-size: 0.76rem; color: var(--text-muted); text-align: center; margin-bottom: 18px; }
+    .item-popup-close { position: absolute; top: 12px; right: 12px; width: 26px; height: 26px; border-radius: 50%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; }
+    .item-popup-actions { display: flex; gap: 8px; }
+
+    .add-item-modal { position: fixed; inset: 0; z-index: 860; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+    .add-item-modal.show { opacity: 1; pointer-events: auto; }
+    .add-item-modal-bg { position: absolute; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); }
+    .add-item-modal-card { position: relative; background: rgba(18,32,18,0.98); border: 1px solid var(--border-leaf); border-radius: 18px; padding: 24px; width: 360px; max-width: 90vw; max-height: 90vh; overflow-y: auto; transform: scale(0.88); transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+    .add-item-modal.show .add-item-modal-card { transform: scale(1); }
+    .add-item-modal h3 { font-family: var(--font-heading); font-size: 1rem; color: var(--accent-green); margin-bottom: 4px; }
+
+    .search-results-dropdown { background: rgba(18,32,18,0.99); border: 1px solid var(--border-leaf); border-radius: 8px; max-height: 200px; overflow-y: auto; margin-top: 4px; }
+    .search-result-item { display: flex; gap: 10px; padding: 8px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.06); transition: background 0.2s; }
+    .search-result-item:hover { background: rgba(124,184,124,0.08); }
+    .search-result-item:last-child { border-bottom: none; }
+
+    @media (max-width: 768px) {
+      .doors-row { gap: 18px; padding: 0 20px; }
+      .door { width: 95px; height: 150px; }
+      .door-add { display: none; }
+      .decorate-panel { width: 290px; }
+      .decorate-tab.panel-open { transform: translateY(-50%) translateX(-290px); }
+    }
+    @media (max-width: 480px) {
+      .username { display: none; }
+      .doors-row { gap: 20px; }
+      .door { width: 85px; height: 140px; }
+      .door-icon { font-size: 1.2rem; }
+      .room-title { margin-top: 120px; top: 24%; left: 50%; transform: translateX(-50%); text-align: center; z-index: 15; pointer-events: none; padding: 0 20px; width: 100%; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <a href="index.html" class="logo">Media<span>Nest</span></a>
+    <div class="top-right">
+      <button class="icon-btn" id="musicBtn" title="Toggle music">🎵</button>
+      <div class="user-chip" id="userChip">
+        <div class="avatar">🌿</div>
+        <span class="username" id="usernameDisplay">...</span>
+      </div>
+      <button class="icon-btn" id="logoutBtn" title="Log out">↩</button>
+    </div>
+  </div>
+
+  <div class="room-stage">
+    <div class="wall"></div>
+    <div class="floor"></div>
+    <div class="ambient-blue-light"></div>
+    <div class="night-stars" id="nightStars"></div>
+    <div class="hanging-lamp"></div>
+    <div class="lamp-shade" id="lampShade"></div>
+    <div class="lamp-glow"></div>
+    <div class="fairy-lights" id="fairyLights">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="wall-window"><div class="window-moon"></div></div>
+    <div class="wall-plant">🪴</div>
+    <div class="wall-clock" id="wallClock"></div>
+    <div class="wall-frame" id="wallFrame">🖼️</div>
+    <div class="bookshelf">
+      <div class="bookshelf-row"><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div></div>
+      <div class="bookshelf-row"><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div></div>
+      <div class="bookshelf-row"><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div><div class="book-spine"></div></div>
+    </div>
+    <div class="dust-particle dust-1"></div><div class="dust-particle dust-2"></div>
+    <div class="dust-particle dust-3"></div><div class="dust-particle dust-4"></div>
+    <div class="dust-particle dust-5"></div>
+    <div class="floor-rug" id="floorRug"></div>
+    <div class="floor-cat" id="floorCat">🐱</div>
+    <div class="floor-plant-small" id="floorPlant">🌿</div>
+    <div class="floor-teacup" id="floorTeacup">☕</div>
+    <div class="room-title">
+      <h1 id="welcomeText">Welcome back</h1>
+      <p>~ pick a door, and I'll walk you in ~</p>
+    </div>
+
+    <div class="doors-row" id="doorsRow">
+      <div class="door door-screen" data-room="screen" data-builtin="true">
+        <div class="door-label">🎬 Screen Room</div>
+        <div class="door-frame"><div class="door-inside"></div><div class="door-panel"><div class="door-icon">🎬</div><div class="door-knob"></div></div></div>
+        <div class="door-mat"></div>
+      </div>
+      <div class="door door-books" data-room="books" data-builtin="true">
+        <div class="door-label">📖 Books Room</div>
+        <div class="door-frame"><div class="door-inside"></div><div class="door-panel"><div class="door-icon">📖</div><div class="door-knob"></div></div></div>
+        <div class="door-mat"></div>
+      </div>
+      <div class="door door-music" data-room="music" data-builtin="true">
+        <div class="door-label">🎵 Music Room</div>
+        <div class="door-frame"><div class="door-inside"></div><div class="door-panel"><div class="door-icon">🎵</div><div class="door-knob"></div></div></div>
+        <div class="door-mat"></div>
+      </div>
+      <div class="door-add" id="doorAdd">+</div>
+    </div>
+
+    <div class="character idle" id="character">
+      <div class="char-hat"></div><div class="char-head"></div>
+      <div class="char-body"></div><div class="char-shadow"></div>
+    </div>
+  </div>
+
+  <div class="lamp-hint" id="lampHint">💡 Click the lamp to toggle night mode</div>
+
+  <div class="decorate-tab" id="decorateTab">
+    <span class="tab-icon">🎨</span><span class="tab-label">decorate</span>
+  </div>
+  <div class="decorate-panel" id="decoratePanel">
+    <button class="panel-close" id="panelClose">✕</button>
+    <div class="panel-header"><h3>Decorate your room</h3><p>Make it feel like home ✨</p></div>
+    <div class="panel-body">
+      <div class="decorate-section">
+        <h4>🎨 Room Theme</h4>
+        <div class="theme-grid">
+          <div class="theme-item theme-forest active" data-theme="forest"><div class="theme-preview"></div>Forest</div>
+          <div class="theme-item theme-cozy" data-theme="cozy"><div class="theme-preview"></div>Cozy</div>
+          <div class="theme-item theme-rainy" data-theme="rainy"><div class="theme-preview"></div>Rainy</div>
+          <div class="theme-item theme-cosmic" data-theme="cosmic"><div class="theme-preview"></div>Cosmic</div>
+          <div class="theme-item theme-cottage" data-theme="cottage"><div class="theme-preview"></div>Cottage</div>
+          <div class="theme-item theme-sunset" data-theme="sunset"><div class="theme-preview"></div>Sunset</div>
+        </div>
+      </div>
+      <div class="decorate-section">
+        <h4>🏠 Floor Decor</h4>
+        <div class="decor-grid">
+          <div class="decor-item" data-decor="rug">🟫</div>
+          <div class="decor-item" data-decor="cat">🐱</div>
+          <div class="decor-item" data-decor="plant">🌿</div>
+          <div class="decor-item" data-decor="teacup">☕</div>
+        </div>
+      </div>
+      <div class="decorate-section">
+        <h4>🖼️ Wall Decor</h4>
+        <div class="decor-grid">
+          <div class="decor-item" data-decor="clock">🕰️</div>
+          <div class="decor-item" data-decor="frame">🖼️</div>
+          <div class="decor-item" data-decor="fairy">✨</div>
+        </div>
+      </div>
+      <div class="decorate-section">
+        <h4>🌙 Ambience</h4>
+        <div class="toggle-row" id="lampToggleRow"><span class="label-text">💡 Main lamp</span><div class="toggle-switch"></div></div>
+        <div class="toggle-row on" id="dustToggleRow"><span class="label-text">✨ Floating dust</span><div class="toggle-switch"></div></div>
+      </div>
+      <div class="stats-quick">
+        <div class="stat-quick"><div class="num" id="statRooms">3</div><div class="lbl">Rooms</div></div>
+        <div class="stat-quick"><div class="num" id="statCustom">0</div><div class="lbl">Custom</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="music-hint" id="musicHint">
+    <div class="music-wave"><span></span><span></span><span></span><span></span></div>
+    Click 🎵 to play ambient music
+  </div>
+
+  <!-- ADD ROOM MODAL -->
+  <div class="modal-backdrop" id="addRoomModal">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <h3>Add a new room</h3>
+      <p class="modal-sub">It'll be auto-furnished based on type ✨</p>
+      <label class="modal-label">Room name</label>
+      <input class="modal-input" id="roomNameInput" type="text" maxlength="24" placeholder="e.g. Podcast Room" />
+      <label class="modal-label">Room type</label>
+      <div class="room-type-grid" id="roomTypeGrid">
+        <div class="room-type-opt selected" data-type="movies"><span class="type-icon">🎬</span><div><div class="type-name">Movies & TV</div><div class="type-desc">Watchlist & ratings</div></div></div>
+        <div class="room-type-opt" data-type="books"><span class="type-icon">📚</span><div><div class="type-name">Books</div><div class="type-desc">Reading shelves</div></div></div>
+        <div class="room-type-opt" data-type="music"><span class="type-icon">🎵</span><div><div class="type-name">Music</div><div class="type-desc">Albums & playlists</div></div></div>
+        <div class="room-type-opt" data-type="games"><span class="type-icon">🎮</span><div><div class="type-name">Games</div><div class="type-desc">Backlog & played</div></div></div>
+        <div class="room-type-opt" data-type="podcasts"><span class="type-icon">🎙️</span><div><div class="type-name">Podcasts</div><div class="type-desc">Shows & queue</div></div></div>
+        <div class="room-type-opt" data-type="custom"><span class="type-icon">✨</span><div><div class="type-name">Custom</div><div class="type-desc">Start from scratch</div></div></div>
+      </div>
+      <label class="modal-label">Choose icon</label>
+      <div class="icon-picker" id="iconPicker">
+        <div class="icon-opt selected" data-icon="🎙️">🎙️</div><div class="icon-opt" data-icon="🎮">🎮</div>
+        <div class="icon-opt" data-icon="🎨">🎨</div><div class="icon-opt" data-icon="📷">📷</div>
+        <div class="icon-opt" data-icon="🧘">🧘</div><div class="icon-opt" data-icon="✍️">✍️</div>
+        <div class="icon-opt" data-icon="🌿">🌿</div><div class="icon-opt" data-icon="🔭">🔭</div>
+        <div class="icon-opt" data-icon="🍵">🍵</div><div class="icon-opt" data-icon="🎲">🎲</div>
+        <div class="icon-opt" data-icon="💻">💻</div><div class="icon-opt" data-icon="📽️">📽️</div>
+      </div>
+      <label class="modal-label">Door colour</label>
+      <div class="color-picker-row" id="colorPicker">
+        <div class="color-opt selected" data-color="linear-gradient(180deg,#3a3a2a,#2a2a1a)" style="background:linear-gradient(135deg,#4a4a2a,#2a2a1a)"></div>
+        <div class="color-opt" data-color="linear-gradient(180deg,#3d5a3d,#2d4a2d)" style="background:linear-gradient(135deg,#4a704a,#2d4a2d)"></div>
+        <div class="color-opt" data-color="linear-gradient(180deg,#5a4a2a,#4a3a1a)" style="background:linear-gradient(135deg,#6a5a30,#4a3a1a)"></div>
+        <div class="color-opt" data-color="linear-gradient(180deg,#4a3a5a,#3a2a4a)" style="background:linear-gradient(135deg,#5a4a6a,#3a2a4a)"></div>
+        <div class="color-opt" data-color="linear-gradient(180deg,#5a3a3a,#4a2a2a)" style="background:linear-gradient(135deg,#6a4040,#4a2a2a)"></div>
+        <div class="color-opt" data-color="linear-gradient(180deg,#3a4a5a,#2a3a4a)" style="background:linear-gradient(135deg,#405060,#2a3a4a)"></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="addRoomConfirm">✦ Create Room</button>
+        <button class="btn-secondary" id="modalCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- GENERATED ROOM OVERLAY -->
+  <div class="room-overlay" id="roomOverlay">
+    <div class="room-overlay-bg">
+      <div class="overlay-wall" id="overlayWall"></div>
+      <div class="overlay-floor" id="overlayFloor"></div>
+    </div>
+    <div class="room-overlay-content">
+      <div class="overlay-topbar">
+        <div class="overlay-title-row">
+          <span class="overlay-room-icon" id="overlayIcon"></span>
+          <span class="overlay-room-name" id="overlayName"></span>
+        </div>
+        <button class="overlay-back" id="overlayBack">← Leave room</button>
+      </div>
+      <div class="room-interior" id="roomInterior"></div>
+    </div>
+  </div>
+
+  <!-- ITEM POPUP -->
+  <div class="item-popup" id="itemPopup">
+    <div class="item-popup-bg" id="itemPopupBg"></div>
+    <div class="item-popup-card">
+      <button class="item-popup-close" id="itemPopupClose">✕</button>
+      <div class="item-popup-icon" id="popupIcon"></div>
+      <div class="item-popup-name" id="popupName"></div>
+      <div class="item-popup-meta" id="popupMeta"></div>
+      <div class="item-popup-actions">
+        <button class="btn-primary" id="popupCycle">Mark as done</button>
+        <button class="btn-secondary" id="popupDelete">Remove</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ADD ITEM MODAL -->
+  <div class="add-item-modal" id="addItemModal">
+    <div class="add-item-modal-bg" id="addItemModalBg"></div>
+    <div class="add-item-modal-card">
+      <button class="modal-close" id="addItemClose">✕</button>
+      <h3 id="addItemTitle">Add to shelf</h3>
+      <p class="modal-sub" id="addItemSub">Fill in the details below</p>
+      <div style="margin-bottom:10px;">
+        <input type="text" id="movieSearch" placeholder="🔍 Search TMDB for movies/series..." style="width:100%;padding:10px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(124,184,124,0.3);border-radius:8px;color:#e8e4d9;font-size:0.9rem;outline:none;" />
+        <div id="movieResults" class="search-results-dropdown" style="display:none;"></div>
+      </div>
+      <label class="modal-label">Title</label>
+      <input class="modal-input" id="addItemName" type="text" maxlength="60" placeholder="Title..." />
+      <label class="modal-label">Creator / Author / Artist</label>
+      <input class="modal-input" id="addItemCreator" type="text" maxlength="60" placeholder="Creator..." />
+      <label class="modal-label">Status</label>
+      <select class="modal-input" id="addItemStatus">
+        <option value="want">Want to enjoy</option>
+        <option value="doing">Currently enjoying</option>
+        <option value="done">Finished</option>
+      </select>
+      <div class="modal-actions">
+        <button class="btn-primary" id="addItemConfirm">Add to shelf</button>
+        <button class="btn-secondary" id="addItemCancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="transition-overlay" id="overlay"></div>
+  <audio id="ambientAudio" loop>
+    <source src="https://vgmtreasurechest.com/soundtracks/stardew-valley/micnidon/01.%20Stardew%20Valley%20Overture.mp3" type="audio/mpeg" />
+  </audio>
+
+  <!-- ── api.js MUST be first ── -->
+  <script src="js/api.js"></script>
+  <script>
+  // ════════════════════════════════════════════════════════════
+  //  GUARD — redirect to login if not authenticated
+  // ════════════════════════════════════════════════════════════
+  requireLogin();
+
+  // ════════════════════════════════════════════════════════════
+  //  CONSTANTS
+  // ════════════════════════════════════════════════════════════
+  const TMDB_KEY = '4525d79fb24ab4a40eaadf46f4a0f378';
+
+  const RTC = {
+    movies:   { wall:'#1e2d3a', floor:'#1a1a2a', itemLabel:'movie',  addPH:'e.g. Oppenheimer',         shelves:[{label:'Currently watching',icon:'🎬',items:[]},{label:'Watchlist',icon:'📽️',items:[]}] },
+    books:    { wall:'#2a1f10', floor:'#1f1810', itemLabel:'book',   addPH:'e.g. The Midnight Library', shelves:[{label:'Currently reading',icon:'📖',items:[]},{label:'To-read pile',icon:'📚',items:[]}] },
+    music:    { wall:'#1e1a2e', floor:'#181520', itemLabel:'album',  addPH:'e.g. Blue by Joni Mitchell',shelves:[{label:'Now spinning',icon:'💿',items:[]},{label:'Saved albums',icon:'🎵',items:[]}] },
+    games:    { wall:'#1a1a2a', floor:'#141418', itemLabel:'game',   addPH:'e.g. Elden Ring',           shelves:[{label:'Playing now',icon:'🎮',items:[]},{label:'Backlog',icon:'🗂️',items:[]}] },
+    podcasts: { wall:'#1a2a20', floor:'#141e18', itemLabel:'show',   addPH:'e.g. This American Life',   shelves:[{label:'Subscribed',icon:'🎙️',items:[]},{label:'Episode queue',icon:'📻',items:[]}] },
+    custom:   { wall:'#1f2e1c', floor:'#2a1f15', itemLabel:'item',   addPH:'e.g. Something special',    shelves:[{label:'Collection',icon:'📦',items:[]},{label:'Wishlist',icon:'⭐',items:[]}] },
+  };
+
+  const STATUS_ICON  = { want:'🔖', doing:'▶', done:'✓' };
+  const STATUS_LABEL = { want:'Want to enjoy', doing:'Currently enjoying', done:'Finished' };
+  const ITEM_COLORS  = ['#4a6a8a','#6a4a7a','#4a7a6a','#7a5a4a','#5a5a7a','#7a4a5a','#4a7a7a','#6a6a4a','#8a4a4a'];
+  const TYPE_ICON_MAP= { movies:'📽️', books:'📚', music:'🎵', games:'🎮', podcasts:'🎙️', custom:'✨' };
+
+  const THEMES = {
+    forest:  {'--wall-dark':'#1f2e1c','--wall-mid':'#2a3b27','--wall-light':'#344a33','--floor-dark':'#2a1f15','--floor-mid':'#3a2b1e','--floor-light':'#4a3725'},
+    cozy:    {'--wall-dark':'#2e1f1a','--wall-mid':'#3b2a24','--wall-light':'#4a3530','--floor-dark':'#2a1a10','--floor-mid':'#3a2618','--floor-light':'#4a3220'},
+    rainy:   {'--wall-dark':'#1a2434','--wall-mid':'#243040','--wall-light':'#2e3e50','--floor-dark':'#1a1f26','--floor-mid':'#242a35','--floor-light':'#2e3540'},
+    cosmic:  {'--wall-dark':'#1a1040','--wall-mid':'#24184e','--wall-light':'#2e205c','--floor-dark':'#10101e','--floor-mid':'#18182a','--floor-light':'#202036'},
+    cottage: {'--wall-dark':'#2d3a20','--wall-mid':'#38482b','--wall-light':'#465636','--floor-dark':'#261e14','--floor-mid':'#34281c','--floor-light':'#423224'},
+    sunset:  {'--wall-dark':'#3a2a1a','--wall-mid':'#4a3826','--wall-light':'#5a4632','--floor-dark':'#2a1810','--floor-mid':'#3a2418','--floor-light':'#4a3020'},
+  };
+
+  // ════════════════════════════════════════════════════════════
+  //  STATE
+  // ════════════════════════════════════════════════════════════
+  let customRooms    = [];
+  let selectedIcon   = '🎙️';
+  let selectedColor  = 'linear-gradient(180deg,#3a3a2a,#2a2a1a)';
+  let selectedType   = 'movies';
+  let isWalking      = false;
+  let panelOpen      = false;
+  let activeRoom     = null;
+  let activePopupCtx = null;
+  let addItemCtx     = null;
+  let lampOn         = true;
+  let dustOn         = true;
+  let musicPlaying   = false;
+
+  // ════════════════════════════════════════════════════════════
+  //  ELEMENT REFS
+  // ════════════════════════════════════════════════════════════
+  const character    = document.getElementById('character');
+  const overlay      = document.getElementById('overlay');
+  const doorsRow     = document.getElementById('doorsRow');
+  const lampShade    = document.getElementById('lampShade');
+  const lampRow      = document.getElementById('lampToggleRow');
+  const decorateTab  = document.getElementById('decorateTab');
+  const decoratePanel= document.getElementById('decoratePanel');
+  const panelClose   = document.getElementById('panelClose');
+  const addRoomModal = document.getElementById('addRoomModal');
+  const roomNameInput= document.getElementById('roomNameInput');
+  const roomOverlay  = document.getElementById('roomOverlay');
+  const overlayWall  = document.getElementById('overlayWall');
+  const overlayFloor = document.getElementById('overlayFloor');
+  const overlayIcon  = document.getElementById('overlayIcon');
+  const overlayName  = document.getElementById('overlayName');
+  const roomInterior = document.getElementById('roomInterior');
+  const itemPopup    = document.getElementById('itemPopup');
+  const addItemModal = document.getElementById('addItemModal');
+  const audio        = document.getElementById('ambientAudio');
+  const musicBtn     = document.getElementById('musicBtn');
+
+  // ════════════════════════════════════════════════════════════
+  //  INIT — username display + stars
+  // ════════════════════════════════════════════════════════════
+  (function init() {
+    const user = getUser();
+    if (user && user.username) {
+      document.getElementById('usernameDisplay').textContent = user.username;
+      document.getElementById('welcomeText').textContent     = `Welcome back, ${user.username}`;
+    }
+
+    // Generate night stars
+    const ns = document.getElementById('nightStars');
+    for (let i = 0; i < 40; i++) {
+      const s = document.createElement('span');
+      s.style.left = Math.random() * 100 + '%';
+      s.style.top  = Math.random() * 60  + '%';
+      s.style.animationDelay = Math.random() * 3 + 's';
+      ns.appendChild(s);
+    }
+
+    // Auto-hide hints
+    setTimeout(() => document.getElementById('lampHint')?.classList.add('hidden'), 5000);
+    setTimeout(() => document.getElementById('musicHint')?.classList.add('hidden'), 8000);
+  })();
+
+  // ════════════════════════════════════════════════════════════
+  //  LOGOUT
+  // ════════════════════════════════════════════════════════════
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    clearAuth();
+    window.location.href = 'login.html';
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  LAMP
+  // ════════════════════════════════════════════════════════════
+  function setLamp(on) {
+    lampOn = on;
+    document.body.classList.toggle('lamp-off', !on);
+    lampRow.classList.toggle('on', !on);
+  }
+  lampShade.addEventListener('click', () => setLamp(!lampOn));
+  lampRow.addEventListener('click',   () => setLamp(!lampOn));
+
+  // ════════════════════════════════════════════════════════════
+  //  MUSIC
+  // ════════════════════════════════════════════════════════════
+  musicBtn.addEventListener('click', () => {
+    musicPlaying = !musicPlaying;
+    if (musicPlaying) {
+      audio.play().catch(() => {});
+      musicBtn.textContent = '🎶';
+      musicBtn.classList.add('playing');
+    } else {
+      audio.pause();
+      musicBtn.textContent = '🎵';
+      musicBtn.classList.remove('playing');
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  DECORATE PANEL
+  // ════════════════════════════════════════════════════════════
+  function openPanel()  { panelOpen = true;  decoratePanel.classList.add('open');    decorateTab.classList.add('panel-open'); }
+  function closePanel() { panelOpen = false; decoratePanel.classList.remove('open'); decorateTab.classList.remove('panel-open'); }
+
+  decorateTab.addEventListener('click',  e => { e.stopPropagation(); panelOpen ? closePanel() : openPanel(); });
+  panelClose.addEventListener('click',   e => { e.stopPropagation(); closePanel(); });
+  document.addEventListener('click', e => {
+    if (panelOpen && !decoratePanel.contains(e.target) && !decorateTab.contains(e.target)) closePanel();
+  });
+
+  // Decor toggles (rug, cat, plant, teacup, clock, frame, fairy lights)
+  const decorMap = {
+    rug:    document.getElementById('floorRug'),
+    cat:    document.getElementById('floorCat'),
+    plant:  document.getElementById('floorPlant'),
+    teacup: document.getElementById('floorTeacup'),
+    clock:  document.getElementById('wallClock'),
+    frame:  document.getElementById('wallFrame'),
+    fairy:  document.getElementById('fairyLights'),
+  };
+  document.querySelectorAll('.decor-item').forEach(el => {
+    const t = decorMap[el.dataset.decor];
+    if (!t) return;
+    el.addEventListener('click', () => {
+      const active = el.classList.toggle('active');
+      t.classList.toggle('active', active);
+    });
+  });
+
+  // Theme switcher
+  document.querySelectorAll('.theme-item').forEach(el => {
+    el.addEventListener('click', () => {
+      document.querySelectorAll('.theme-item').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+      const v = THEMES[el.dataset.theme];
+      if (v) Object.entries(v).forEach(([k, val]) => document.documentElement.style.setProperty(k, val));
+    });
+  });
+
+  // Dust toggle
+  document.getElementById('dustToggleRow').addEventListener('click', function () {
+    dustOn = !dustOn;
+    this.classList.toggle('on', dustOn);
+    document.querySelectorAll('.dust-particle').forEach(d => d.classList.toggle('off', !dustOn));
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  BUILT-IN DOORS → navigate to room pages
+  // ════════════════════════════════════════════════════════════
+  document.querySelectorAll('.door[data-builtin]').forEach(door => {
+    door.addEventListener('click', () => {
+      if (isWalking) return;
+      isWalking = true;
+      const rect = door.getBoundingClientRect();
+      character.classList.remove('idle');
+      character.classList.add('walking');
+      character.style.left = (rect.left + rect.width / 2) + 'px';
+      setTimeout(() => {
+        door.classList.add('opening');
+        character.classList.remove('walking');
+        setTimeout(() => character.classList.add('entering'), 600);
+        setTimeout(() => overlay.classList.add('show'), 1200);
+        setTimeout(() => { window.location.href = `room-${door.dataset.room}.html`; }, 2000);
+      }, 1800);
+    });
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  ADD ROOM MODAL — pickers
+  // ════════════════════════════════════════════════════════════
+  document.querySelectorAll('.icon-opt').forEach(o => o.addEventListener('click', () => {
+    document.querySelectorAll('.icon-opt').forEach(x => x.classList.remove('selected'));
+    o.classList.add('selected'); selectedIcon = o.dataset.icon;
+  }));
+  document.querySelectorAll('.color-opt').forEach(o => o.addEventListener('click', () => {
+    document.querySelectorAll('.color-opt').forEach(x => x.classList.remove('selected'));
+    o.classList.add('selected'); selectedColor = o.dataset.color;
+  }));
+  document.querySelectorAll('.room-type-opt').forEach(o => o.addEventListener('click', () => {
+    document.querySelectorAll('.room-type-opt').forEach(x => x.classList.remove('selected'));
+    o.classList.add('selected'); selectedType = o.dataset.type;
+    const mi = TYPE_ICON_MAP[selectedType];
+    if (mi) document.querySelectorAll('.icon-opt').forEach(x => { if (x.dataset.icon === mi) x.click(); });
+  }));
+
+  function openModal()  { addRoomModal.classList.add('show');    roomNameInput.focus(); }
+  function closeModal() { addRoomModal.classList.remove('show'); roomNameInput.value = ''; }
+
+  document.getElementById('doorAdd').addEventListener('click',    e => { e.stopPropagation(); openModal(); });
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+  document.getElementById('modalCancel').addEventListener('click',closeModal);
+  addRoomModal.addEventListener('click', e => { if (e.target === addRoomModal) closeModal(); });
+  roomNameInput.addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('addRoomConfirm').click(); });
+
+  // ════════════════════════════════════════════════════════════
+  //  CREATE ROOM → API
+  // ════════════════════════════════════════════════════════════
+  document.getElementById('addRoomConfirm').addEventListener('click', async () => {
+    const name = roomNameInput.value.trim();
+    if (!name) { roomNameInput.focus(); roomNameInput.style.borderColor = 'rgba(200,80,80,0.6)'; return; }
+    roomNameInput.style.borderColor = '';
+    try {
+      const room = await Rooms.create({ name, icon: selectedIcon, color: selectedColor, type: selectedType, theme: 'forest' });
+      attachLocalConfig(room);
+      customRooms.push(room);
+      createDoorEl(room);
+      closeModal();
+      document.getElementById('statCustom').textContent = customRooms.length;
+    } catch (err) { alert(err.message); }
+  });
+
+  function attachLocalConfig(room) {
+    const tpl = RTC[room.type] || RTC.custom;
+    room.wall      = tpl.wall;
+    room.floor     = tpl.floor;
+    room.itemLabel = tpl.itemLabel;
+    room.addPH     = tpl.addPH;
+    room.shelves   = tpl.shelves.map(s => ({ ...s, items: [] }));
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  LOAD ROOMS FROM BACKEND
+  // ════════════════════════════════════════════════════════════
+  async function loadRooms() {
+    try {
+      const rooms = await Rooms.getAll();
+      customRooms = rooms.filter(r => !r.isDefault);
+      customRooms.forEach(room => { attachLocalConfig(room); createDoorEl(room); });
+      document.getElementById('statCustom').textContent = customRooms.length;
+    } catch (e) {
+      console.error('loadRooms failed:', e);
+    }
+  }
+  loadRooms();
+
+  // ════════════════════════════════════════════════════════════
+  //  CREATE DOOR ELEMENT
+  // ════════════════════════════════════════════════════════════
+  function createDoorEl(room) {
+    const door = document.createElement('div');
+    door.className  = 'door door-custom';
+    door.dataset.id = room.id;
+    door.innerHTML  = `
+      <div class="door-label">${room.icon} ${escH(room.name)}</div>
+      <div class="door-frame">
+        <div class="door-inside"></div>
+        <div class="door-panel" style="background:${room.color || 'linear-gradient(180deg,#3a3a2a,#2a2a1a)'}">
+          <div class="door-icon">${room.icon}</div>
+          <div class="door-knob"></div>
+        </div>
+      </div>
+      <div class="door-mat"></div>
+      <button class="door-delete">✕</button>
+    `;
+    door.querySelector('.door-delete').addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!confirm(`Remove "${room.name}"?`)) return;
+      try {
+        await Rooms.delete(room.id);
+        door.remove();
+        customRooms = customRooms.filter(r => r.id !== room.id);
+        document.getElementById('statCustom').textContent = customRooms.length;
+      } catch (err) { alert(err.message); }
+    });
+    door.addEventListener('click', () => enterRoom(door, room));
+    doorsRow.insertBefore(door, document.getElementById('doorAdd'));
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  ENTER CUSTOM ROOM (walk animation → overlay)
+  // ════════════════════════════════════════════════════════════
+  function enterRoom(door, room) {
+    if (isWalking) return;
+    isWalking = true;
+    const rect = door.getBoundingClientRect();
+    character.classList.remove('idle');
+    character.classList.add('walking');
+    character.style.left = (rect.left + rect.width / 2) + 'px';
+    setTimeout(() => {
+      door.classList.add('opening');
+      character.classList.remove('walking');
+      setTimeout(() => character.classList.add('entering'), 600);
+      setTimeout(() => {
+        door.classList.remove('opening');
+        character.classList.remove('entering');
+        character.classList.add('idle');
+        character.style.left = '50%';
+        isWalking = false;
+        openGeneratedRoom(room);
+      }, 1600);
+    }, 1800);
+  }
+
+  // ════════════════════════════════════════════════════════════
+  //  GENERATED ROOM OVERLAY
+  // ════════════════════════════════════════════════════════════
+  async function openGeneratedRoom(room) {
+    activeRoom = room;
+    overlayWall.style.background  = `linear-gradient(180deg,${room.wall},${nudge(room.wall, 18)})`;
+    overlayFloor.style.background = `linear-gradient(180deg,${room.floor},${nudge(room.floor, 12)})`;
+    overlayIcon.textContent = room.icon;
+    overlayName.textContent = room.name;
+    roomInterior.innerHTML  = '<p style="color:#8a8672;font-style:italic;margin-top:40px;">Loading...</p>';
+    roomOverlay.classList.add('show');
+    await refreshRoomEntries();
+  }
+
+  async function refreshRoomEntries() {
+    if (!activeRoom) return;
+    try {
+      const entries = await Entries.getAll(activeRoom.id);
+      // distribute entries evenly across shelves
+      activeRoom.shelves.forEach((s, i) => {
+        s.items = entries
+          .filter((_, idx) => idx % activeRoom.shelves.length === i)
+          .map(e => ({
+            id:      e.id,
+            name:    e.title,
+            creator: e.creator || '',
+            status:  e.status  || 'done',
+            color:   ITEM_COLORS[(e.color || 1) % ITEM_COLORS.length] || '#4a6a8a',
+          }));
+      });
+    } catch (err) { console.error(err); }
+    renderRoom();
+  }
+
+  function renderRoom() {
+    if (!activeRoom) return;
+    let done = 0, doing = 0, want = 0, total = 0;
+    activeRoom.shelves.forEach(s => s.items.forEach(i => {
+      total++;
+      if (i.status === 'done') done++;
+      else if (i.status === 'doing') doing++;
+      else want++;
+    }));
+
+    let h = `
+      <div class="room-stats-bar">
+        <div class="room-stat"><strong>${done}</strong> finished</div>
+        <div class="room-stat"><strong>${doing}</strong> in progress</div>
+        <div class="room-stat"><strong>${want}</strong> saved</div>
+        <div class="room-stat"><strong>${total}</strong> total</div>
+      </div>
+      <div class="room-shelves">
+    `;
+    activeRoom.shelves.forEach((shelf, si) => {
+      h += `
+        <div class="shelf-section">
+          <div class="shelf-label-row">
+            <span style="font-size:1rem">${shelf.icon}</span>
+            <span class="shelf-label-text">${escH(shelf.label)}</span>
+          </div>
+          <div class="shelf-board"><div class="shelf-items">
+      `;
+      if (!shelf.items.length) {
+        h += `<div class="shelf-empty">Nothing here yet — click + to add</div>`;
+      } else {
+        shelf.items.forEach((item, ii) => {
+          h += `
+            <div class="shelf-item" data-si="${si}" data-ii="${ii}">
+              <div class="shelf-item-cover" style="background:${item.color}">
+                <div class="status-dot ${item.status}"></div>
+                <span style="font-size:1rem;position:relative;z-index:1">${STATUS_ICON[item.status]}</span>
+              </div>
+              <div class="shelf-item-name">${escH(item.name)}</div>
+            </div>
+          `;
+        });
+      }
+      h += `<div class="add-item-btn" data-si="${si}">+</div></div></div></div>`;
+    });
+    h += '</div>';
+    roomInterior.innerHTML = h;
+
+    roomInterior.querySelectorAll('.shelf-item').forEach(el =>
+      el.addEventListener('click', () => showItemPopup(+el.dataset.si, +el.dataset.ii))
+    );
+    roomInterior.querySelectorAll('.add-item-btn').forEach(el =>
+      el.addEventListener('click', () => showAddItem(+el.dataset.si))
+    );
+  }
+
+  document.getElementById('overlayBack').addEventListener('click', () => {
+    roomOverlay.classList.remove('show');
+    activeRoom = null;
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  ITEM POPUP
+  // ════════════════════════════════════════════════════════════
+  function showItemPopup(si, ii) {
+    activePopupCtx = { si, ii };
+    const item  = activeRoom.shelves[si].items[ii];
+    const order = ['want','doing','done'];
+    const ci    = order.indexOf(item.status);
+    document.getElementById('popupIcon').textContent = STATUS_ICON[item.status];
+    document.getElementById('popupName').textContent = item.name;
+    document.getElementById('popupMeta').textContent = (item.creator ? item.creator + ' · ' : '') + STATUS_LABEL[item.status];
+    document.getElementById('popupCycle').textContent = ci === 2 ? '↺ Mark as unread' : ci === 1 ? '✅ Mark as done' : '▶ Start enjoying';
+    itemPopup.classList.add('show');
+  }
+
+  document.getElementById('itemPopupClose').addEventListener('click', () => itemPopup.classList.remove('show'));
+  document.getElementById('itemPopupBg').addEventListener('click',    () => itemPopup.classList.remove('show'));
+
+  document.getElementById('popupCycle').addEventListener('click', async () => {
+    const { si, ii } = activePopupCtx;
+    const item  = activeRoom.shelves[si].items[ii];
+    const order = ['want','doing','done'];
+    const next  = order[(order.indexOf(item.status) + 1) % 3];
+    try {
+      await Entries.update(item.id, { status: next });
+      itemPopup.classList.remove('show');
+      await refreshRoomEntries();
+    } catch (err) { alert(err.message); }
+  });
+
+  document.getElementById('popupDelete').addEventListener('click', async () => {
+    const { si, ii } = activePopupCtx;
+    const item = activeRoom.shelves[si].items[ii];
+    if (!confirm(`Remove "${item.name}"?`)) return;
+    try {
+      await Entries.delete(item.id);
+      itemPopup.classList.remove('show');
+      await refreshRoomEntries();
+    } catch (err) { alert(err.message); }
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  ADD ITEM MODAL
+  // ════════════════════════════════════════════════════════════
+  function showAddItem(si) {
+    addItemCtx = { si };
+    document.getElementById('addItemTitle').textContent = 'Add to ' + activeRoom.shelves[si].label;
+    document.getElementById('addItemSub').textContent   = 'Add a new ' + activeRoom.itemLabel;
+    document.getElementById('addItemName').value        = '';
+    document.getElementById('addItemCreator').value     = '';
+    document.getElementById('addItemStatus').value      = 'want';
+    document.getElementById('movieSearch').value        = '';
+    document.getElementById('movieResults').style.display = 'none';
+    addItemModal.classList.add('show');
+    setTimeout(() => document.getElementById('addItemName').focus(), 100);
+  }
+
+  function closeAddItem() { addItemModal.classList.remove('show'); addItemCtx = null; }
+
+  document.getElementById('addItemClose').addEventListener('click',   closeAddItem);
+  document.getElementById('addItemCancel').addEventListener('click',  closeAddItem);
+  document.getElementById('addItemModalBg').addEventListener('click', e => { if (e.target === document.getElementById('addItemModalBg')) closeAddItem(); });
+
+  document.getElementById('addItemConfirm').addEventListener('click', async () => {
+    const name = document.getElementById('addItemName').value.trim();
+    if (!name || !addItemCtx) { document.getElementById('addItemName').focus(); return; }
+    try {
+      await Entries.create({
+        roomId:  activeRoom.id,
+        title:   name,
+        type:    activeRoom.itemLabel,
+        creator: document.getElementById('addItemCreator').value.trim() || null,
+        status:  document.getElementById('addItemStatus').value,
+        color:   Math.floor(Math.random() * 9) + 1,
+      });
+      closeAddItem();
+      await refreshRoomEntries();
+    } catch (err) { alert(err.message); }
+  });
+
+  document.getElementById('addItemName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('addItemConfirm').click();
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  TMDB SEARCH inside add-item modal
+  // ════════════════════════════════════════════════════════════
+  const movieSearchEl  = document.getElementById('movieSearch');
+  const movieResultsEl = document.getElementById('movieResults');
+  let searchTimer;
+
+  movieSearchEl.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    const q = movieSearchEl.value.trim();
+    if (!q) { movieResultsEl.style.display = 'none'; return; }
+    searchTimer = setTimeout(async () => {
+      try {
+        const res  = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(q)}`);
+        const data = await res.json();
+        const hits = (data.results || []).filter(x => x.media_type === 'movie' || x.media_type === 'tv').slice(0, 6);
+        if (!hits.length) { movieResultsEl.style.display = 'none'; return; }
+        movieResultsEl.innerHTML = hits.map(item => {
+          const title  = escH(item.title || item.name);
+          const year   = (item.release_date || item.first_air_date || '').slice(0, 4);
+          const poster = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : '';
+          const creator= escH(item.original_language ? '' : '');
+          return `<div class="search-result-item" data-title="${title}" data-year="${year}">
+            ${poster ? `<img src="${poster}" style="width:32px;height:48px;object-fit:cover;border-radius:3px;flex-shrink:0">` : '<div style="width:32px;height:48px;background:#2a3b27;border-radius:3px;flex-shrink:0"></div>'}
+            <div><div style="font-size:0.85rem;color:#e8e4d9">${title}</div><div style="font-size:0.72rem;color:#8a8672">${year} · ${item.media_type}</div></div>
+          </div>`;
+        }).join('');
+        movieResultsEl.style.display = 'block';
+        movieResultsEl.querySelectorAll('.search-result-item').forEach(el => {
+          el.addEventListener('click', () => {
+            document.getElementById('addItemName').value = el.dataset.title;
+            movieSearchEl.value = '';
+            movieResultsEl.style.display = 'none';
+          });
+        });
+      } catch (err) { console.error('TMDB search error:', err); }
+    }, 400);
+  });
+
+  // ════════════════════════════════════════════════════════════
+  //  UTILITIES
+  // ════════════════════════════════════════════════════════════
+  function escH(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  function nudge(hex, n) {
+    return hex.replace(/[0-9a-f]{2}/gi, m =>
+      Math.min(255, parseInt(m, 16) + n).toString(16).padStart(2, '0')
+    );
+  }
+  </script>
+</body>
+</html>

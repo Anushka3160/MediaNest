@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen Room — MediaNest</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg-deep: #0f1f10;
+      --bg-card: #243726;
+      --wall-dark: #1f2e1c;
+      --wall-mid: #2a3b27;
+      --wall-light: #344a33;
+      --floor-dark: #2a1f15;
+      --floor-mid: #3a2b1e;
+      --floor-light: #4a3725;
+      --text-primary: #e8e4d9;
+      --text-secondary: #b8b4a4;
+      --text-muted: #8a8672;
+      --accent-green: #7cb87c;
+      --accent-gold: #d4a76a;
+      --accent-warm: #e0c097;
+      --accent-lavender: #9b8ec4;
+      --border-leaf: rgba(124, 184, 124, 0.15);
+      --font-heading: "Playfair Display", Georgia, serif;
+      --font-body: "Inter", -apple-system, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+      overflow-y: auto;
+      transition: background-color 1.2s ease;
+    }
+
+    /* ROOM ATMOSPHERE */
+    .room-bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background: linear-gradient(180deg, var(--wall-dark) 0%, var(--wall-mid) 50%, var(--wall-light) 100%);
+    }
+    .room-bg::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 30%, rgba(124, 184, 124, 0.08), transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(212, 167, 106, 0.06), transparent 50%);
+    }
+    .room-floor {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 25%;
+      z-index: -1;
+      background: linear-gradient(180deg, var(--floor-dark), var(--floor-light));
+    }
+
+    /* Ambient particles */
+    .dust {
+      position: fixed;
+      width: 3px; height: 3px;
+      background: var(--accent-gold);
+      border-radius: 50%;
+      box-shadow: 0 0 6px var(--accent-gold);
+      pointer-events: none;
+      opacity: 0;
+      z-index: 0;
+      animation: float 8s infinite ease-in-out;
+    }
+    .dust:nth-child(1) { left: 15%; top: 30%; animation-delay: 0s; }
+    .dust:nth-child(2) { left: 85%; top: 50%; animation-delay: 3s; }
+    .dust:nth-child(3) { left: 50%; top: 20%; animation-delay: 5s; }
+    @keyframes float {
+      0%, 100% { opacity: 0; transform: translate(0, 0); }
+      50%      { opacity: 0.5; transform: translate(20px, -30px); }
+    }
+
+    /* TOP BAR */
+    .top-bar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(15, 31, 16, 0.85);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-leaf);
+    }
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: rgba(36, 55, 38, 0.7);
+      border: 1px solid var(--border-leaf);
+      border-radius: 100px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.3s ease;
+    }
+    .back-btn:hover {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+      transform: translateX(-3px);
+    }
+    .room-title-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .room-title-bar .room-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      background: rgba(124, 184, 124, 0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+    }
+    .room-title-bar h1 {
+      font-family: var(--font-heading);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    .room-title-bar p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .top-right {
+      display: flex;
+      gap: 10px;
+    }
+    .icon-btn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: rgba(36, 55, 38, 0.7);
+      border: 1px solid var(--border-leaf);
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    .icon-btn:hover {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+      transform: translateY(-2px);
+    }
+
+    /* MAIN CONTENT */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* HEADER */
+    .room-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .room-header h2 {
+      font-family: var(--font-heading);
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+    }
+    .room-header p {
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* SEARCH BAR */
+    .add-bar {
+      display: flex;
+      gap: 12px;
+      max-width: 700px;
+      margin: 0 auto 48px;
+      position: relative;
+    }
+    .search-wrap {
+      flex: 1;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 14px 44px 14px 44px;
+      background: rgba(36, 55, 38, 0.7);
+      border: 1px solid var(--border-leaf);
+      border-radius: 14px;
+      color: var(--text-primary);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      backdrop-filter: blur(10px);
+      outline: none;
+      transition: all 0.3s ease;
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-input:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 0 3px rgba(124, 184, 124, 0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+    }
+    .add-btn {
+      padding: 14px 24px;
+      background: linear-gradient(135deg, var(--accent-green), #5a9e5a);
+      color: var(--bg-deep);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      box-shadow: 0 4px 15px rgba(124, 184, 124, 0.3);
+    }
+    .add-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(124, 184, 124, 0.4);
+    }
+
+    /* SEARCH RESULTS DROPDOWN */
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 120px;
+      background: rgba(36, 55, 38, 0.98);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-leaf);
+      border-radius: 14px;
+      max-height: 300px;
+      overflow-y: auto;
+      z-index: 50;
+      display: none;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+    .search-results.show { display: block; }
+    .search-result {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .search-result:last-child { border-bottom: none; }
+    .search-result:hover { background: rgba(124, 184, 124, 0.08); }
+    .search-result-cover {
+      width: 36px; height: 52px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .search-result-info h4 {
+      font-size: 0.9rem;
+      margin-bottom: 2px;
+    }
+    .search-result-info p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* STATS BAR */
+    .stats-bar {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      padding: 8px 20px;
+      background: rgba(36, 55, 38, 0.5);
+      border: 1px solid var(--border-leaf);
+      border-radius: 100px;
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-pill strong {
+      color: var(--accent-green);
+      font-family: var(--font-heading);
+    }
+
+    /* FILTER TABS */
+    .filter-tabs {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+    }
+    .filter-tab {
+      padding: 8px 18px;
+      background: transparent;
+      border: 1px solid var(--border-leaf);
+      border-radius: 100px;
+      color: var(--text-secondary);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .filter-tab:hover { color: var(--text-primary); }
+    .filter-tab.active {
+      background: rgba(124, 184, 124, 0.15);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+    }
+
+    /* THE SHELF */
+    .shelves-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 50px;
+    }
+
+    .shelf {
+      position: relative;
+    }
+    .shelf-board {
+      position: absolute;
+      bottom: -14px;
+      left: -10px;
+      right: -10px;
+      height: 18px;
+      background: linear-gradient(180deg, #5a4228, #3a2a18);
+      border-radius: 3px;
+      box-shadow: 0 6px 15px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      z-index: 0;
+      
+    }
+    .shelf-board::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .shelf-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 20px;
+      padding: 20px 10px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* MOVIE CARD on shelf */
+    .shelf-item {
+      position: relative;
+      aspect-ratio: 2/3;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+      background: #2a2a2a;
+    }
+    .shelf-item:hover {
+      transform: translateY(-12px) rotate(-2deg);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    }
+    .shelf-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .shelf-item-overlay {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 30px 12px 12px;
+      background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+      color: #fff;
+    }
+    .shelf-item-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .shelf-item-meta {
+      font-size: 0.7rem;
+      opacity: 0.7;
+    }
+    .shelf-item-stars {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 3px 8px;
+      border-radius: 100px;
+      font-size: 0.7rem;
+      color: var(--accent-gold);
+      backdrop-filter: blur(4px);
+    }
+    .shelf-item-note-dot {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      width: 8px; height: 8px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent-green);
+    }
+
+    /* Empty slot */
+    .shelf-empty {
+      aspect-ratio: 2/3;
+      border: 2px dashed rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+      font-size: 1.5rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .shelf-empty:hover {
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      background: rgba(124, 184, 124, 0.05);
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji {
+      font-size: 3rem;
+      margin-bottom: 16px;
+      opacity: 0.6;
+    }
+    .empty-state h3 {
+      font-family: var(--font-heading);
+      font-size: 1.3rem;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    /* =================== NOTEBOOK MODAL =================== */
+    .notebook-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    .notebook-overlay.show { display: flex; }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .notebook {
+      background: linear-gradient(180deg, #f5edd6, #e8dcc0);
+      color: #3a2a1a;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      position: relative;
+      animation: bookOpen 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+      font-family: 'Playfair Display', Georgia, serif;
+    }
+    @keyframes bookOpen {
+      from { opacity: 0; transform: scale(0.9) rotateY(-10deg); }
+      to   { opacity: 1; transform: scale(1) rotateY(0); }
+    }
+    .notebook::before {
+      content: "";
+      position: absolute;
+      left: 40px;
+      top: 0; bottom: 0;
+      width: 1px;
+      background: rgba(196, 144, 144, 0.3);
+    }
+    .notebook-lines {
+      position: absolute;
+      top: 180px;
+      left: 0; right: 0;
+      bottom: 0;
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 29px,
+        rgba(196, 144, 144, 0.15) 30px
+      );
+      pointer-events: none;
+      border-radius: 0 0 12px 12px;
+    }
+
+    .notebook-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px; height: 32px;
+      background: rgba(58, 42, 26, 0.1);
+      border: none;
+      border-radius: 50%;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #3a2a1a;
+      z-index: 10;
+    }
+    .notebook-close:hover {
+      background: rgba(58, 42, 26, 0.2);
+    }
+
+    .notebook-header {
+      padding: 36px 40px 24px 60px;
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      border-bottom: 2px dashed rgba(196, 144, 144, 0.3);
+    }
+    .notebook-cover-img {
+      width: 80px;
+      height: 120px;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      object-fit: cover;
+      flex-shrink: 0;
+    }
+    .notebook-meta { flex: 1; }
+    .notebook-meta h2 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .notebook-meta .sub {
+      font-size: 0.85rem;
+      color: #7a5a42;
+      font-family: var(--font-body);
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+    .rating-stars {
+      display: flex;
+      gap: 4px;
+      font-size: 1.3rem;
+    }
+    .rating-stars .star {
+      cursor: pointer;
+      color: #d4c4a0;
+      transition: color 0.2s ease;
+    }
+    .rating-stars .star.filled,
+    .rating-stars .star:hover,
+    .rating-stars .star:hover ~ .star {
+      color: #d4a76a;
+    }
+    .rating-stars:hover .star { color: #d4a76a; }
+    .rating-stars .star:hover ~ .star { color: #d4c4a0; }
+
+    .notebook-body {
+      padding: 20px 40px 40px 60px;
+      position: relative;
+      z-index: 2;
+    }
+    .notebook-field {
+      margin-bottom: 20px;
+    }
+    .notebook-field label {
+      display: block;
+      font-family: var(--font-heading);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9a5a5a;
+      margin-bottom: 6px;
+    }
+    .notebook-field textarea,
+    .notebook-field input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      font-family: 'Caveat', 'Playfair Display', cursive;
+      font-size: 1.1rem;
+      color: #3a2a1a;
+      padding: 2px 0;
+      line-height: 30px;
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+    }
+    .notebook-field textarea {
+      min-height: 60px;
+    }
+    .notebook-field textarea::placeholder,
+    .notebook-field input::placeholder {
+      color: #b8a890;
+      font-style: italic;
+    }
+
+    .notebook-footer {
+      padding: 20px 40px 30px 60px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 2px dashed rgba(196, 144, 144, 0.3);
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .notebook-date {
+      font-size: 0.8rem;
+      color: #7a5a42;
+      font-family: var(--font-body);
+    }
+    .notebook-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .notebook-btn {
+      padding: 8px 16px;
+      border: 1px solid rgba(58, 42, 26, 0.2);
+      background: transparent;
+      border-radius: 100px;
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      cursor: pointer;
+      color: #3a2a1a;
+      transition: all 0.2s ease;
+    }
+    .notebook-btn:hover {
+      background: rgba(58, 42, 26, 0.08);
+    }
+    .notebook-btn.primary {
+      background: #7cb87c;
+      border-color: #7cb87c;
+      color: #fff;
+    }
+    .notebook-btn.primary:hover {
+      background: #5a9e5a;
+    }
+    .notebook-btn.danger:hover {
+      background: #c49090;
+      color: #fff;
+      border-color: #c49090;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(36, 55, 38, 0.95);
+      border: 1px solid var(--accent-green);
+      color: var(--text-primary);
+      padding: 12px 24px;
+      border-radius: 100px;
+      backdrop-filter: blur(10px);
+      z-index: 300;
+      font-size: 0.85rem;
+      transition: transform 0.4s ease;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 768px) {
+      .shelf-items { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; }
+      .notebook-header { padding: 24px 24px 16px 40px; flex-direction: column; }
+      .notebook-body, .notebook-footer { padding-left: 40px; padding-right: 24px; }
+      .notebook::before { left: 28px; }
+      .add-bar { flex-direction: column; }
+      .room-header h2 { font-size: 1.6rem; }
+      .back-btn { padding: 6px 6px; font-size: 0.85rem; margin-right: 5px;}
+        }
+    .shelf-section {
+  margin-bottom: 0;
+}
+ 
+.shelf-label {
+  font-family: var(--font-heading, serif);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-muted, #888);
+  padding: 20px 30px 6px;
+}
+ 
+.shelf-row {
+  display: flex;
+  flex-direction: row;        /* ← horizontal */
+  align-items: flex-end;
+  gap: 14px;
+  padding: 20px 30px 0;
+  min-height: 210px;
+  border-bottom: 14px solid #3a2416;
+  box-shadow: inset 0 -18px 20px -14px rgba(0,0,0,0.6);
+  flex-wrap: wrap;
+  /* position: relative; */
+  background: rgba(0,0,0,0.08);
+}
+ 
+.shelf-row::before {
+    content: "";
+  position: absolute;
+  top: -8px; left: 0; right: 0;
+  height: 10px;
+  background: linear-gradient(180deg, #5a3a28, #3a2416);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+}
+ 
+.poster-card {
+   width: 100px;
+  cursor: pointer;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+ 
+.poster-card:hover {
+   transform: translateY(-14px);
+}
+ 
+.poster-img {
+ width: 95px;
+  height: 140px;
+  border-radius: 2px 4px 4px 2px;
+  background: #1e1830;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  /* Clean sharp shadow — no muddy overlay */
+  box-shadow:
+    2px 0 6px rgba(0,0,0,0.5),
+    4px 2px 12px rgba(0,0,0,0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.poster-img::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0;
+  width: 5px; height: 100%;
+  background: rgba(0,0,0,0.35);
+  z-index: 1;
+}
+ 
+.poster-img::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 5px; right: 0;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent);
+  z-index: 1;
+}
+ 
+.poster-rating {
+  position: absolute;
+  bottom: 6px; right: 5px;
+  background: rgba(0,0,0,0.75);
+  color: gold;
+  font-size: 0.55rem;
+  padding: 2px 4px;
+  border-radius: 3px;
+  z-index: 2;
+  letter-spacing: 1px;
+}
+ 
+.poster-title {
+   font-size: 0.68rem;
+  color: var(--text-secondary, #b8b4a4);
+  text-align: center;
+  margin-top: 7px;
+  max-width: 85px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+ 
+.poster-year {
+  font-size: 0.62rem;
+  color: var(--text-muted, #888);
+  text-align: center;
+  margin-top: 1px;
+}
+  </style>
+</head>
+<body>
+
+  <div class="room-bg"></div>
+  <div class="room-floor"></div>
+  <div class="dust"></div>
+  <div class="dust"></div>
+  <div class="dust"></div>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <a href="home.html" class="back-btn">← Back to room</a>
+    <div class="room-title-bar">
+      <div class="room-icon">🎬</div>
+      <div>
+        <h1>Screen Room</h1>
+        <p>Movies & series you've watched</p>
+      </div>
+    </div>
+    <div class="top-right">
+      <button class="icon-btn" onclick="cycleVibe()" title="Change vibe">🎨</button>
+      <button class="icon-btn" id="musicBtn" title="Toggle music">🎵</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <div class="room-header">
+      <h2>Your Screen Shelf</h2>
+      <p>~ every film kept close, like a favorite book ~</p>
+    </div>
+
+    <!-- Add bar -->
+    <div class="add-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search for a movie or series..." />
+        <div class="search-results" id="searchResults"></div>
+      </div>
+      <button class="add-btn" onclick="openManualAdd()">+ Add manually</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-bar">
+      <div class="stat-pill">📽️ <strong id="statTotal">0</strong> items</div>
+      <div class="stat-pill">⭐ <strong id="statRated">0</strong> rated</div>
+      <div class="stat-pill">📝 <strong id="statNotes">0</strong> with notes</div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-tabs">
+      <button class="filter-tab active" data-filter="all">All</button>
+      <button class="filter-tab" data-filter="movie">🎬 Movies</button>
+      <button class="filter-tab" data-filter="series">📺 Series</button>
+      <button class="filter-tab" data-filter="rated">⭐ Rated</button>
+      <button class="filter-tab" data-filter="noted">📝 With notes</button>
+    </div>
+
+    <!-- Shelves -->
+    <div class="shelves-wrapper" id="shelvesWrapper">
+      <!-- Shelves will render here -->
+    </div>
+
+  </div>
+
+  <!-- NOTEBOOK MODAL -->
+  <div class="notebook-overlay" id="notebookOverlay">
+    <div class="notebook">
+      <button class="notebook-close" onclick="closeNotebook()">✕</button>
+      <div class="notebook-lines"></div>
+
+      <div class="notebook-header">
+        <img class="notebook-cover-img" id="nbCover" src="" alt="" />
+        <div class="notebook-meta">
+          <h2 id="nbTitle">Title</h2>
+          <div class="sub" id="nbSubtitle">Director · Year</div>
+          <div class="rating-stars" id="nbStars">
+            <span class="star" data-val="1">★</span>
+            <span class="star" data-val="2">★</span>
+            <span class="star" data-val="3">★</span>
+            <span class="star" data-val="4">★</span>
+            <span class="star" data-val="5">★</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="notebook-body">
+        <div class="notebook-field">
+          <label>Favorite Scene</label>
+          <textarea id="nbScene" placeholder="The moment that stayed with me..."></textarea>
+        </div>
+        <div class="notebook-field">
+          <label>Favorite Line</label>
+          <textarea id="nbLine" placeholder="A line I want to remember..."></textarea>
+        </div>
+        <div class="notebook-field">
+          <label>My Thoughts</label>
+          <textarea id="nbThoughts" placeholder="Honest feelings about this one..." style="min-height: 100px;"></textarea>
+        </div>
+      </div>
+
+      <div class="notebook-footer">
+        <span class="notebook-date" id="nbDate">Watched today</span>
+        <div class="notebook-actions">
+          <button class="notebook-btn danger" onclick="deleteItem()">Remove</button>
+          <button class="notebook-btn" onclick="shareItem()">Share</button>
+          <button class="notebook-btn primary" onclick="saveNotebook()">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+<script src="js/api.js"></script>
+<script>
+requireLogin();
+ 
+const RTC = {
+  movies: {
+    shelves: [
+      { label: 'Currently Watching', icon: '🎬', items: [] },
+      { label: 'Watchlist',          icon: '📽️', items: [] },
+      { label: 'Watched',            icon: '✓',  items: [] }
+    ]
+  }
+};
+ 
+let activeRoom     = null;
+let activePopupCtx = null;
+let currentRating  = 0;
+let searchTimer    = null;
+ 
+async function loadRooms() {
+  try {
+    const rooms = await Rooms.getAll();
+    const room  = rooms.find(r => r.type === 'movies');
+    if (room) await openRoom(room);
+    else showToast('No movies room found');
+  } catch (err) { showToast('Failed to load: ' + err.message); }
+}
+ 
+async function openRoom(room) {
+  activeRoom = room;
+  try {
+    const entries = await Entries.getAll(room.id);
+    RTC.movies.shelves.forEach(s => s.items = []);
+    entries.forEach(e => {
+      const item = mapEntry(e);
+      if (e.status === 'doing')     RTC.movies.shelves[0].items.push(item);
+      else if (e.status === 'done') RTC.movies.shelves[2].items.push(item);
+      else                          RTC.movies.shelves[1].items.push(item);
+    });
+    renderRoom();
+  } catch (err) { showToast('Failed to load entries: ' + err.message); }
+}
+ 
+function mapEntry(e) {
+  return {
+    id: e.id, name: e.title, creator: e.creator || '',
+    coverUrl: e.coverUrl || '', status: e.status || 'want',
+    year: e.year || '', rating: e.rating || 0,
+    favScene: e.favScene || '', favLine: e.favLine || '', thoughts: e.thoughts || ''
+  };
+}
+ 
+function renderRoom() {
+  const container = document.getElementById('shelvesWrapper');
+  const allItems  = RTC.movies.shelves.flatMap(s => s.items);
+  updateStats(allItems);
+ 
+  if (!allItems.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:80px 20px;color:var(--text-muted)">
+        <div style="font-size:3rem;margin-bottom:16px">🎬</div>
+        <h3 style="font-family:var(--font-heading,serif);margin-bottom:8px">Nothing here yet</h3>
+        <p>Search for a movie or series above</p>
+      </div>`;
+    return;
+  }
+ 
+  // Wrap everything in a bookcase-style container
+  let html = `<div style="
+    background: linear-gradient(90deg, #3a2416 0px, #3a2416 20px, transparent 20px, transparent calc(100% - 20px), #3a2416 calc(100% - 20px), #3a2416 100%);
+    border-radius: 4px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+    position: relative;
+    padding-top: 8px;
+  ">`;
+ 
+  RTC.movies.shelves.forEach((shelf, si) => {
+    if (!shelf.items.length) return;
+ 
+    html += `
+      <div class="shelf-label">${shelf.icon} ${shelf.label}</div>
+      <div class="shelf-row">`;
+ 
+    shelf.items.forEach((item, ii) => {
+      html += `
+        <div class="poster-card" onclick="openPopup(${si},${ii})">
+          <div class="poster-img" style="${item.coverUrl
+            ? `background-image:url(${item.coverUrl})`
+            : `background:linear-gradient(135deg,#2a2035,#1a1428)`}">
+            ${!item.coverUrl ? '🎬' : ''}
+            ${item.rating ? `<div class="poster-rating">${'★'.repeat(item.rating)}</div>` : ''}
+          </div>
+          <div class="poster-title">${item.name}</div>
+          <div class="poster-year">${item.year || ''}</div>
+        </div>`;
+    });
+ 
+    // Add "+" slot at end of each shelf
+    html += `
+        <div onclick="openManualAdd(${si})" style="
+          width:95px; height:140px;margin-bottom:33px;margin-left:8px;
+          border: 2px dashed rgba(255,255,255,0.15);
+          border-radius: 3px;
+          display:flex; align-items:center; justify-content:center;
+          color:rgba(255,255,255,0.2); font-size:1.5rem;
+          cursor:pointer; transition:all 0.3s ease; flex-shrink:0;
+          align-self:flex-end;
+        " onmouseover="this.style.borderColor='rgba(255,255,255,0.4)';this.style.color='rgba(255,255,255,0.4)'"
+           onmouseout="this.style.borderColor='rgba(255,255,255,0.15)';this.style.color='rgba(255,255,255,0.2)'">
+          +
+        </div>
+      </div>`;
+  });
+ 
+  html += `</div>`;
+  container.innerHTML = html;
+}
+ 
+function updateStats(items) {
+  document.getElementById('statTotal').textContent = items.length;
+  document.getElementById('statRated').textContent = items.filter(i => i.rating > 0).length;
+  document.getElementById('statNotes').textContent = items.filter(i => i.thoughts).length;
+}
+ 
+// Search via backend proxy → TMDB
+document.getElementById('searchInput').addEventListener('input', function () {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+  if (!q) { hideResults(); return; }
+  searchTimer = setTimeout(() => searchMovies(q), 400);
+});
+ 
+async function searchMovies(q) {
+  try {
+    const items = await apiFetch(`/search/movies?q=${encodeURIComponent(q)}`);
+    showResults(items);
+  } catch (err) { showToast('Search failed: ' + err.message); }
+}
+ 
+function showResults(items) {
+  const box = document.getElementById('searchResults');
+  if (!items.length) {
+    box.innerHTML = '<div class="search-result" style="color:var(--text-muted)">No results found</div>';
+    box.classList.add('show'); return;
+  }
+  box.innerHTML = items.map((item, i) => `
+    <div class="search-result" onclick="addFromSearch(${i})">
+      ${item.coverUrl
+        ? `<div class="search-result-cover" style="background-image:url(${item.coverUrl});background-size:cover"></div>`
+        : `<div class="search-result-cover" style="background:#2a2030;display:flex;align-items:center;justify-content:center">🎬</div>`}
+      <div class="search-result-info">
+        <h4>${item.title}</h4>
+        <p>${item.year || 'Unknown year'}</p>
+      </div>
+    </div>`).join('');
+  box.classList.add('show');
+  box._results = items;
+}
+ 
+function hideResults() { document.getElementById('searchResults').classList.remove('show'); }
+document.addEventListener('click', e => { if (!e.target.closest('.search-wrap')) hideResults(); });
+ 
+async function addFromSearch(idx) {
+  const item = document.getElementById('searchResults')._results[idx];
+  hideResults();
+  document.getElementById('searchInput').value = '';
+  await addItem(1, item.title, item.creator || '', item.coverUrl, item.year);
+}
+ 
+function openManualAdd(si = 1) {
+  const name = prompt('Movie or series title:');
+  if (!name?.trim()) return;
+  addItem(si, name.trim());
+}
+ 
+async function addItem(si = 1, name, creator = '', coverUrl = '', year = '') {
+  if (!activeRoom) return showToast('No room loaded');
+  try {
+    const entry = await Entries.create({
+      roomId: activeRoom.id, title: name, type: 'movie', creator, coverUrl,
+      year: year ? parseInt(year) : undefined,
+      status: si === 0 ? 'doing' : si === 2 ? 'done' : 'want'
+    });
+    RTC.movies.shelves[si].items.push(mapEntry(entry));
+    renderRoom();
+    showToast('Added 🎬');
+  } catch (err) { showToast('Error: ' + err.message); }
+}
+ 
+function openPopup(si, ii) {
+  activePopupCtx = { si, ii };
+  const item = RTC.movies.shelves[si].items[ii];
+  document.getElementById('nbTitle').textContent    = item.name;
+  document.getElementById('nbSubtitle').textContent = (item.creator || '') + (item.year ? ' · ' + item.year : '');
+  document.getElementById('nbDate').textContent     = RTC.movies.shelves[si].label;
+  document.getElementById('nbScene').value          = item.favScene || '';
+  document.getElementById('nbLine').value           = item.favLine  || '';
+  document.getElementById('nbThoughts').value       = item.thoughts || '';
+  // nbCover is an <img> tag in movies HTML
+  const cover = document.getElementById('nbCover');
+  cover.src   = item.coverUrl || '';
+  cover.style.display = item.coverUrl ? 'block' : 'none';
+  setStars(item.rating || 0);
+  document.getElementById('notebookOverlay').classList.add('show');
+}
+ 
+function closeNotebook() {
+  document.getElementById('notebookOverlay').classList.remove('show');
+  activePopupCtx = null;
+}
+ 
+function setStars(val) {
+  currentRating = val;
+  document.querySelectorAll('#nbStars .star').forEach(s =>
+    s.classList.toggle('filled', parseInt(s.dataset.val) <= val));
+}
+document.getElementById('nbStars').addEventListener('click', e => {
+  if (e.target.classList.contains('star')) setStars(parseInt(e.target.dataset.val));
+});
+ 
+async function saveNotebook() {
+  if (!activePopupCtx) return;
+  const { si, ii } = activePopupCtx;
+  const item    = RTC.movies.shelves[si].items[ii];
+  const updated = {
+    rating: currentRating,
+    favScene: document.getElementById('nbScene').value,
+    favLine:  document.getElementById('nbLine').value,
+    thoughts: document.getElementById('nbThoughts').value
+  };
+  try {
+    await Entries.update(item.id, updated);
+    Object.assign(item, updated);
+    closeNotebook(); renderRoom(); showToast('Saved ✓');
+  } catch (err) { showToast('Save failed: ' + err.message); }
+}
+ 
+async function deleteItem() {
+  if (!activePopupCtx) return;
+  if (!confirm('Remove this?')) return;
+  const { si, ii } = activePopupCtx;
+  const item = RTC.movies.shelves[si].items[ii];
+  try {
+    await Entries.delete(item.id);
+    RTC.movies.shelves[si].items.splice(ii, 1);
+    closeNotebook(); renderRoom(); showToast('Removed');
+  } catch (err) { showToast('Delete failed: ' + err.message); }
+}
+ 
+function shareItem() {
+  if (!activePopupCtx) return;
+  const item = RTC.movies.shelves[activePopupCtx.si].items[activePopupCtx.ii];
+  navigator.clipboard.writeText(`🎬 "${item.name}"${item.year ? ' (' + item.year + ')' : ''}${item.rating ? ' — ' + '⭐'.repeat(item.rating) : ''} · MediaNest`);
+  showToast('Copied!');
+}
+ 
+document.querySelectorAll('.filter-tab').forEach(tab => {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.media-card').forEach(el => {
+      const si   = parseInt(el.getAttribute('data-si') || 0);
+      const ii   = parseInt(el.getAttribute('data-ii') || 0);
+      let show   = true;
+      const item = RTC.movies.shelves[si]?.items[ii];
+      if (!item) return;
+      if (filter === 'movie')  show = item.type === 'movie';
+      if (filter === 'series') show = item.type === 'series';
+      if (filter === 'rated')  show = item.rating > 0;
+      if (filter === 'noted')  show = !!item.thoughts;
+      el.style.opacity = show ? '1' : '0.15';
+    });
+  });
+});
+ 
+const vibes = [
+  {'--wall-dark':'#0a0a1a','--wall-mid':'#141428','--wall-light':'#1e1e3a'},
+  {'--wall-dark':'#1a0a0a','--wall-mid':'#2d1414','--wall-light':'#3a1a1a'},
+  {'--wall-dark':'#0a1a0a','--wall-mid':'#142814','--wall-light':'#1a3a1a'},
+  {'--wall-dark':'#1a150a','--wall-mid':'#2d2414','--wall-light':'#3d3020'}
+];
+let vibeIdx = 0;
+function cycleVibe() {
+  vibeIdx = (vibeIdx + 1) % vibes.length;
+  Object.entries(vibes[vibeIdx]).forEach(([k,v]) => document.documentElement.style.setProperty(k,v));
+  showToast('Vibe changed ✨');
+}
+ 
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+ 
+loadRooms();
+</script>
+</body>
+</html>
